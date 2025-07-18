@@ -1,12 +1,19 @@
-# BurrowGame Deployment Report - Starknet Mainnet
+# BurrowGame Mainnet Deployment Report
 
-## 🎯 Deployment Summary
+## 📋 Deployment Summary
 
-BurrowGame smart contracts have been successfully deployed to Starknet Mainnet with STRK payment integration and advanced tokenomics.
-
-**Deployment Date**: January 14, 2025  
+**Date**: January 17, 2025  
 **Network**: Starknet Mainnet  
 **Deployer Account**: `0x049c97B55f2eF9523B50A61E66E8749F0c1F447C3a4e46944A0ED8b2EdD305ac`
+
+## 🔐 Security Notice
+
+**CRITICAL**: This deployment used secure private key management through environment variables. Private keys are never stored in any public files or repositories.
+
+## 📝 Account Configuration
+
+- **Address**: `0x049c97B55f2eF9523B50A61E66E8749F0c1F447C3a4e46944A0ED8b2EdD305ac`
+- **Private Key**: **[SECURED - NOT DISCLOSED FOR SECURITY REASONS]**
 
 ---
 
@@ -14,7 +21,6 @@ BurrowGame smart contracts have been successfully deployed to Starknet Mainnet w
 
 ### 🔑 Deployer Account
 - **Address**: `0x049c97B55f2eF9523B50A61E66E8749F0c1F447C3a4e46944A0ED8b2EdD305ac`
-- **Private Key**: `0x03cb7d630bf9b5fbf2a8746834f50621186ae2e930e1d7c54b23baa1e31c9abc`
 - **Type**: ArgentX Account (Mainnet)
 
 ### 🪙 BURR Token Contract

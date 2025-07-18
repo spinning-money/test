@@ -2,6 +2,10 @@
 
 A Cairo 2 smart contract system for a meme mining game featuring BURR tokens and beaver NFT staking with STRK payments on Starknet.
 
+## 🔐 Security Notice
+
+**This repository is SECURE** - All private keys, account files, and sensitive information have been removed. See [SECURITY.md](SECURITY.md) for complete security audit details.
+
 ## 🎮 Game Overview
 
 BurrowGame is a time-based staking game where players:

@@ -1,20 +1,29 @@
-# Visit https://foundry-rs.github.io/starknet-foundry/appendix/snfoundry-toml.html
+# https://github.com/foundry-rs/starknet-foundry/tree/master/docs/src/projects/configuration.md 
 # and https://foundry-rs.github.io/starknet-foundry/projects/configuration.html for more information
 
-[sncast.default]                                         # Define a profile name
-url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA" # Mainnet RPC URL  
-account = "mainnet-argent"
-wait-params = { timeout = 300, retry-interval = 10 }     # Wait for submitted transaction parameters
-block-explorer = "StarkScan"                             # Block explorer service used to display links to transaction details
-show-explorer-links = true                               # Print links pointing to pages with transaction details in the chosen block explorer
+[profile.default]
+url = "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA"
 
-[sncast.mainnet]                                         # Mainnet profile
-url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA" # Mainnet RPC URL
-account = "mainnet-argent"
-wait-params = { timeout = 300, retry-interval = 10 }     # Wait for submitted transaction parameters
-block-explorer = "StarkScan"                             # Block explorer service used to display links to transaction details
-show-explorer-links = true                               # Print links pointing to pages with transaction details in the chosen block explorer
+# Account configuration - DO NOT PUT PRIVATE KEYS HERE
+# Use environment variables instead:
+# export STARKNET_PRIVATE_KEY="your_private_key"
+# export STARKNET_ACCOUNT_ADDRESS="your_account_address"
 
-[accounts-file]
-default = { address = "0x01BE47EbD8FCbCd4c1fB472DFd452530D86ce18b0381233836a7994154D88617", private_key = "0x02c398465e58e5ca974035d5d145faf0980e8320e126ee2b8e4b18ac7a2b5ef6" }
-mainnet-argent = { address = "0x049c97B55f2eF9523B50A61E66E8749F0c1F447C3a4e46944A0ED8b2EdD305ac", private_key = "0x03cb7d630bf9b5fbf2a8746834f50621186ae2e930e1d7c54b23baa1e31c9abc" }
+[profile.mainnet]
+url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA"
+
+# For accounts configuration, use environment variables:
+# Default account should be configured through STARKNET_* environment variables
+# mainnet-argent account should be configured through STARKNET_* environment variables
+
+[[tool.sncast.account]]
+name = "default"
+# Configure through environment variables for security
+# STARKNET_ACCOUNT_ADDRESS and STARKNET_PRIVATE_KEY
+
+[[tool.sncast.account]] 
+name = "mainnet-argent"
+# Configure through environment variables for security
+# STARKNET_ACCOUNT_ADDRESS and STARKNET_PRIVATE_KEY
+
+[tool.sncast.multicall]

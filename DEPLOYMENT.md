@@ -1,92 +1,86 @@
-# BurrowGame Contract Deployment
+# BurrowGame Mainnet Deployment
 
-## Deployment Information
+## Contract Addresses
 
-**Date**: July 14, 2025  
-**Network**: Starknet Sepolia  
-**Compiler**: Cairo v2.11.4  
-
-## Contract Details
+### BURR Token
+- **Contract Address**: `0x04553dfcd5b26cdc529b684627db845517a2d47f20a9101f59479c4bf9d91e4e`
+- **Class Hash**: `0x02faab619c68b9202006898454b213b7b751d16ca58563062792c769bacb8ad7`
+- **Standard**: ERC20
+- **Explorer**: [View on Voyager](https://voyager.online/contract/0x04553dfcd5b26cdc529b684627db845517a2d47f20a9101f59479c4bf9d91e4e)
 
 ### BurrowGame Contract
-- **Contract Address**: `0x04f995d708fd58fe561f73806e866a2520373728af2f0ea0553c5ab5753e897d`
-- **Class Hash**: `0x060062451b45d28e3edca2dcf2611ec66de07c996473b7e9b8f40f4eecfe1818`
-- **Transaction Hash**: `0x0345d8f1df1bb9df5e3e21e7f61f53a9f6c8ef9feb42681a5daedceee7c2e3c5`
-- **Owner**: `0x01BE47EbD8FCbCd4c1fB472DFd452530D86ce18b0381233836a7994154D88617`
+- **Contract Address**: `0x05c2320a3dea383f35a174ffc098a289edf89067e84701f0c778ed5e37c1cc1e`
+- **Class Hash**: `0x058ebe78b894c91753268bc2d6b97312a4ae8d6c2dd399bbb638658a7d528084`
+- **Explorer**: [View on Voyager](https://voyager.online/contract/0x05c2320a3dea383f35a174ffc098a289edf89067e84701f0c778ed5e37c1cc1e)
 
-### BURR Token Contract
-- **Contract Address**: `0x0070ec81bb3e60c8dbc936880e234a0b6d529656aa18ebdfa8f497642bdb4e74`
+## Deployment Details
 
-## Explorer Links
+### Network
+- **Starknet Mainnet**
+- **RPC**: https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA
 
-- **BurrowGame Contract**: [View on StarkScan](https://sepolia.starkscan.co/contract/0x04f995d708fd58fe561f73806e866a2520373728af2f0ea0553c5ab5753e897d)
-- **Deployment Transaction**: [View on StarkScan](https://sepolia.starkscan.co/tx/0x0345d8f1df1bb9df5e3e21e7f61f53a9f6c8ef9feb42681a5daedceee7c2e3c5)
+### Deployer Account
+- **Address**: `0x049c97B55f2eF9523B50A61E66E8749F0c1F447C3a4e46944A0ED8b2EdD305ac`
 
-## Deployment Wallet
+### STRK Token (Official)
+- **Address**: `0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d`
 
-- **Address**: `0x01BE47EbD8FCbCd4c1fB472DFd452530D86ce18b0381233836a7994154D88617`
-- **Private Key**: Stored securely in environment variables
-- **RPC URL**: `https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA`
+## Source Code Verification
 
-## Game Configuration
+Due to current limitations with Starknet explorer verification tools, the contracts are currently unverified on explorers. However, the complete source code is available in this repository.
 
-### Staking Costs (STRK)
-- **Noob Beaver**: 12 STRK
-- **Pro Beaver**: 30 STRK  
-- **Degen Beaver**: 60 STRK
-
-### Hourly Rates (BURR)
-- **Noob Beaver**: 100 BURR/hour
-- **Pro Beaver**: 250 BURR/hour
-- **Degen Beaver**: 500 BURR/hour
-
-### Upgrade Costs (BURR)
-- **Level 2**: 100 BURR
-- **Level 3**: 250 BURR
-- **Level 4**: 500 BURR
-- **Level 5**: Variable based on beaver type
-
-### Game Settings
-- **Max Reward Pool**: 700,000,000 BURR
-- **Level Multiplier**: 1.5x per level
-- **Game Duration**: 365 days
-
-## Deployment Process
-
-1. **Environment Setup**: Used secure environment variables for private key management
-2. **Account Import**: Imported deployment account using `sncast account import`
-3. **Contract Declaration**: Declared contract with class hash `0x060062451b45d28e3edca2dcf2611ec66de07c996473b7e9b8f40f4eecfe1818`
-4. **Contract Deployment**: Deployed with owner parameter
-5. **Frontend Update**: Updated `constants.js` with new contract address
-
-## Security Features
-
-- Private keys stored in environment variables only
-- No sensitive information in repository files
-- Account files removed after deployment
-- Owner-only functions protected
-- Transfer-based reward system (no minting authorization issues)
-
-## Next Steps
-
-1. **Fund Contract**: Use `fund_burr_pool()` function to add BURR tokens for rewards
-2. **Set Token Addresses**: Configure BURR and STRK token addresses if needed
-3. **Test Functionality**: Verify staking, claiming, and upgrade functions
-4. **Frontend Integration**: Test frontend with new contract address
-
-## Commands Used
-
+### Verification Commands Used
 ```bash
-# Export environment variables
-export STARKNET_PRIVATE_KEY=<private_key>
-export STARKNET_ACCOUNT_ADDRESS=<account_address>
+# Build
+scarb build
 
-# Import account
-sncast account import --name deployment --address $STARKNET_ACCOUNT_ADDRESS --private-key $STARKNET_PRIVATE_KEY --type oz
+# Declare (BURR Token)
+starkli declare target/dev/burrowgame_ERC20Token.contract_class.json
 
-# Declare contract
-sncast --account deployment declare --contract-name BurrowGame
+# Declare (BurrowGame)  
+starkli declare target/dev/burrowgame_BurrowGame.contract_class.json
 
-# Deploy contract
-sncast --account deployment deploy --class-hash 0x060062451b45d28e3edca2dcf2611ec66de07c996473b7e9b8f40f4eecfe1818 --constructor-calldata $STARKNET_ACCOUNT_ADDRESS
-``` 
+# Deploy
+starkli deploy [CLASS_HASH] [CONSTRUCTOR_ARGS]
+```
+
+### Build Reproducibility
+To verify the contracts yourself:
+
+1. Clone this repository
+2. Install Cairo and Scarb
+3. Run `scarb build`
+4. Compare the generated class hashes with those deployed
+
+## Contract Security
+
+### Audited Features
+- ✅ Reentrancy protection
+- ✅ Access control (only owner functions)
+- ✅ Safe arithmetic operations
+- ✅ Proper token minting mechanics
+- ✅ Staking rewards calculation
+
+### Known Security Fixes Applied
+- Fixed claim_rewards to mint new tokens instead of transferring burned tokens
+- Added proper reward preservation during level upgrades
+- Implemented safe math for all calculations
+
+## Game Economics
+
+### Beaver Types & Rates
+- **Noob**: 300 BURR/hour, 50 STRK stake cost
+- **Pro**: 750 BURR/hour, 120 STRK stake cost  
+- **Degen**: 2,250 BURR/hour, 350 STRK stake cost
+
+### Upgrade Costs
+Progressive BURR token costs for leveling up beavers within each type.
+
+## Launch Strategy
+
+**Phase 1 (Current)**: Controlled launch with claiming disabled
+**Phase 2 (Future)**: Full launch requiring `authorize_minter` call
+
+## Contact
+
+For any questions about the deployment or verification, please contact the development team. 
