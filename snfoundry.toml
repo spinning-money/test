@@ -3,9 +3,9 @@
 [sncast.mainnet]
 account = "burr_deployer"
 accounts-file = "./accounts.json"
-url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA"
+url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/YOUR_API_KEY_HERE"
 
 [tool.sncast]
 account = "burr_deployer"
 accounts-file = "./accounts.json"
-url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA" 
+url = "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/YOUR_API_KEY_HERE" 
