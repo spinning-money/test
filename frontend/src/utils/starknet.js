@@ -822,12 +822,32 @@ export async function fetchPlayerInfo(address) {
                         const rawLevel = oldBeaverResult.result[2];
                         const rawLastClaim = oldBeaverResult.result[3];
                         
-                        beaverType = parseInt(rawType, 16);
-                        beaverLevel = parseInt(rawLevel, 16);
-                        lastClaimTime = parseInt(rawLastClaim, 16);
+                        // Eski kontrattan gelen veriler decimal formatında olabilir
+                        // Hem hex hem decimal parsing deneyelim
+                        let parsedType, parsedLevel, parsedLastClaim;
+                        
+                        // Önce decimal parsing dene
+                        parsedType = parseInt(rawType);
+                        parsedLevel = parseInt(rawLevel);
+                        parsedLastClaim = parseInt(rawLastClaim);
+                        
+                        // Eğer decimal parsing NaN verirse, hex parsing dene
+                        if (isNaN(parsedType)) {
+                            parsedType = parseInt(rawType, 16);
+                            parsedLevel = parseInt(rawLevel, 16);
+                            parsedLastClaim = parseInt(rawLastClaim, 16);
+                            console.log(`🔍 Decimal parsing failed, using hex parsing for beaver ${beaverId}`);
+                        } else {
+                            console.log(`🔢 Using decimal parsing for beaver ${beaverId}`);
+                        }
+                        
+                        beaverType = parsedType;
+                        beaverLevel = parsedLevel;
+                        lastClaimTime = parsedLastClaim;
                         
                         console.log(`✅ Found beaver ${beaverId} in old contract: Type=${beaverType}, Level=${beaverLevel}`);
                         console.log(`🎯 Using old contract data for beaver ${beaverId}`);
+                        console.log(`📊 Raw values: Type=${rawType}, Level=${rawLevel}, LastClaim=${rawLastClaim}`);
                     } else {
                         console.log(`⚠️ No valid data in old contract for beaver ${beaverId}`);
                     }
