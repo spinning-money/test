@@ -1535,11 +1535,8 @@ export async function fetchGameInfo() {
 export async function fetchGameAnalytics() {
     try {
         const provider = getProvider();
-        const connection = getConnection();
         
-        if (!connection) {
-            throw new Error('Wallet not connected');
-        }
+        console.log('📊 Fetching game analytics...');
         
         console.log('📊 Fetching game analytics...');
         
@@ -1588,11 +1585,8 @@ export async function fetchGameAnalytics() {
 export async function fetchBeaverTypeStats() {
     try {
         const provider = getProvider();
-        const connection = getConnection();
         
-        if (!connection) {
-            throw new Error('Wallet not connected');
-        }
+        console.log('📊 Fetching beaver type stats...');
         
         console.log('📊 Fetching beaver type stats...');
         
@@ -1625,11 +1619,8 @@ export async function fetchBeaverTypeStats() {
 export async function fetchTotalClaimedBurr() {
     try {
         const provider = getProvider();
-        const connection = getConnection();
         
-        if (!connection) {
-            throw new Error('Wallet not connected');
-        }
+        console.log('📊 Fetching total claimed BURR...');
         
         console.log('📊 Fetching total claimed BURR...');
         
@@ -1655,11 +1646,8 @@ export async function fetchTotalClaimedBurr() {
 export async function fetchActiveUsersCount() {
     try {
         const provider = getProvider();
-        const connection = getConnection();
         
-        if (!connection) {
-            throw new Error('Wallet not connected');
-        }
+        console.log('📊 Fetching active users count...');
         
         console.log('📊 Fetching active users count...');
         
@@ -1685,11 +1673,8 @@ export async function fetchActiveUsersCount() {
 export async function fetchContractBalances() {
     try {
         const provider = getProvider();
-        const connection = getConnection();
         
-        if (!connection) {
-            throw new Error('Wallet not connected');
-        }
+        console.log('📊 Fetching contract balances...');
         
         console.log('📊 Fetching contract balances...');
         
