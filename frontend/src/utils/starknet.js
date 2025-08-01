@@ -825,9 +825,10 @@ export async function fetchPlayerInfo(address) {
             
             console.log('🔍 Processing beavers...');
             
-            // Add all beaver IDs directly since get_user_beavers already returns user's beavers
-            beaverIds = allBeaverIds;
-            console.log(`✅ Added all ${allBeaverIds.length} beaver IDs from get_user_beavers`);
+                            // Filter out problematic beaver IDs (like ID 1 which appears for everyone)
+                const problematicBeaverIds = [1]; // Beaver ID 1 appears for everyone but isn't really owned
+                beaverIds = allBeaverIds.filter(id => !problematicBeaverIds.includes(id));
+                console.log(`✅ Added ${beaverIds.length} valid beaver IDs from get_user_beavers (filtered out problematic IDs)`);
             
             console.log('🦫 Valid beaver IDs (really owned):', beaverIds);
         }
