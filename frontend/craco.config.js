@@ -63,6 +63,25 @@ module.exports = {
         }
       });
 
+      // Disable React error overlay for wallet extension errors
+      if (webpackConfig.devServer) {
+        webpackConfig.devServer.client = {
+          ...webpackConfig.devServer.client,
+          overlay: {
+            errors: false,
+            warnings: false
+          }
+        };
+      }
+
+      // Override webpack to suppress wallet extension errors
+      webpackConfig.plugins.push(
+        new webpack.DefinePlugin({
+          'process.env.REACT_APP_DISABLE_ERROR_OVERLAY': JSON.stringify('true'),
+          'process.env.FAST_REFRESH': JSON.stringify('false')
+        })
+      );
+
       return webpackConfig;
     },
   },

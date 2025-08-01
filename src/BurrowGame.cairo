@@ -71,7 +71,7 @@ pub trait IBurrowGameV3<TContractState> {
     fn burn_remaining(ref self: TContractState);
     
     // Migration functions
-    fn import_beaver(ref self: TContractState, owner: ContractAddress, beaver_id: u64, beaver_type: u8, last_claim_time: u64);
+    fn import_beaver(ref self: TContractState, owner: ContractAddress, beaver_id: u64, beaver_type: u8, last_claim_time: u64, original_level: u8);
 
     
     // Getter functions
@@ -459,7 +459,7 @@ pub mod BurrowGameV3 {
             }));
         }
 
-        fn import_beaver(ref self: ContractState, owner: ContractAddress, beaver_id: u64, beaver_type: u8, last_claim_time: u64) {
+        fn import_beaver(ref self: ContractState, owner: ContractAddress, beaver_id: u64, beaver_type: u8, last_claim_time: u64, original_level: u8) {
             let caller = get_caller_address();
             assert(caller == self.owner.read(), 'Only owner can import');
             
@@ -467,10 +467,13 @@ pub mod BurrowGameV3 {
             let existing_beaver = self.beavers.entry(beaver_id).read();
             assert(existing_beaver.id == 0, 'Already imported');
             
+            // Validate level range
+            assert(original_level >= 1 && original_level <= 5, 'Invalid level');
+            
             let new_beaver = Beaver {
                 id: beaver_id,
                 beaver_type,
-                level: 1,
+                level: original_level, // Preserve original level instead of always setting to 1
                 last_claim_time,
                 owner,
             };

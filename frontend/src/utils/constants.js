@@ -1,24 +1,32 @@
 import React from 'react';
 
-// Network configuration - Only Mainnet
+// Network configuration - Mainnet and Sepolia
 export const NETWORKS = {
-  MAINNET: 'mainnet'
+  MAINNET: 'mainnet',
+  SEPOLIA: 'sepolia'
 };
 
-// Current network - Mainnet only
+// Current network - Mainnet
 export const CURRENT_NETWORK = NETWORKS.MAINNET;
 
 // Contract addresses - Mainnet
 export const MAINNET_ADDRESSES = {
   BURR_TOKEN: "0x01bc7c8ce3b8fe74e4870adc2965df850d429048e83fad93f3140f52ecb74add",
-  GAME_CONTRACT: "0x0138cb7150f311b40163cf4cb4e1be38b795c232ef27c50cdf30b166bec36c27", // New V3 contract
+  GAME_CONTRACT: "0x0138cb7150f311b40163cf4cb4e1be38b795c232ef27c50cdf30b166bec36c27", // Mainnet V3 contract
+   STRK_TOKEN: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d"
+};
+
+// Contract addresses - Sepolia Testnet
+export const SEPOLIA_ADDRESSES = {
+  BURR_TOKEN: "0x029ff99fe8a10df1247b06f113ef9b5b0f76cc593e4f6c1f942876c8a278b0b9",
+  GAME_CONTRACT: "0x07896f5e8b88eecafdfca3c7ff499d9d82fdfdc1f4ce5f42247f6c0be0bb9210",
   STRK_TOKEN: "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d"
 };
 
-// Export current network addresses (Mainnet only)
-export const BURR_TOKEN_ADDRESS = MAINNET_ADDRESSES.BURR_TOKEN;
-export const GAME_CONTRACT_ADDRESS = MAINNET_ADDRESSES.GAME_CONTRACT;
-export const STRK_ADDRESSES = [MAINNET_ADDRESSES.STRK_TOKEN];
+// Export current network addresses based on CURRENT_NETWORK
+export const BURR_TOKEN_ADDRESS = CURRENT_NETWORK === NETWORKS.SEPOLIA ? SEPOLIA_ADDRESSES.BURR_TOKEN : MAINNET_ADDRESSES.BURR_TOKEN;
+export const GAME_CONTRACT_ADDRESS = CURRENT_NETWORK === NETWORKS.SEPOLIA ? SEPOLIA_ADDRESSES.GAME_CONTRACT : MAINNET_ADDRESSES.GAME_CONTRACT;
+export const STRK_ADDRESSES = CURRENT_NETWORK === NETWORKS.SEPOLIA ? [SEPOLIA_ADDRESSES.STRK_TOKEN] : [MAINNET_ADDRESSES.STRK_TOKEN];
 
 // For legacy support
 export const CONTRACT_ADDRESSES = {

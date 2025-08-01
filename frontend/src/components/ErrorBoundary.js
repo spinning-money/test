@@ -7,6 +7,18 @@ class ErrorBoundary extends React.Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Wallet ile ilgili hataları özel olarak handle et
+    if (error.message && (
+      error.message.includes('KeyRing is locked') ||
+      error.message.includes('chrome-extension') ||
+      error.message.includes('injectedScript') ||
+      error.message.includes('wallet') ||
+      error.message.includes('dmkamcknogkgcdfhhbddcghachkejeap')
+    )) {
+      // Bu tür hataları sessizce handle et - UI'da hiçbir şey gösterme
+      return { hasError: false, error: null };
+    }
+    
     // State'i güncelle ki bir sonraki render'da fallback UI gösterilsin
     return { hasError: true, error };
   }
@@ -17,7 +29,8 @@ class ErrorBoundary extends React.Component {
       error.message.includes('KeyRing is locked') ||
       error.message.includes('chrome-extension') ||
       error.message.includes('injectedScript') ||
-      error.message.includes('wallet')
+      error.message.includes('wallet') ||
+      error.message.includes('dmkamcknogkgcdfhhbddcghachkejeap')
     )) {
       console.log('Wallet locked or extension error caught and suppressed:', error.message);
       // Bu tür hataları sessizce handle et - UI'da hiçbir şey gösterme
@@ -43,7 +56,8 @@ class ErrorBoundary extends React.Component {
       
       if (errorMessage.includes('KeyRing is locked') || 
           errorMessage.includes('wallet') ||
-          errorMessage.includes('chrome-extension')) {
+          errorMessage.includes('chrome-extension') ||
+          errorMessage.includes('dmkamcknogkgcdfhhbddcghachkejeap')) {
         // Wallet hataları için kullanıcı dostu mesaj
         return (
           <div style={{

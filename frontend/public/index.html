@@ -27,6 +27,95 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title> Burrow Game - $BURR Mining</title>
+    <script>
+      // Completely disable React error overlay for wallet extension errors
+      (function() {
+        // Override console methods immediately
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        const originalConsoleLog = console.log;
+        
+        console.error = function(...args) {
+          const message = args.join(' ');
+          if (message.includes('KeyRing is locked') || 
+              message.includes('chrome-extension') ||
+              message.includes('injectedScript') ||
+              message.includes('Uncaught runtime errors') ||
+              message.includes('Error: KeyRing is locked') ||
+              message.includes('dmkamcknogkgcdfhhbddcghachkejeap') ||
+              message.includes('nkbihfbeogaeaoehlefnkodbefgpgknn') ||
+              message.includes('Failed to connect to MetaMask')) {
+            return;
+          }
+          originalConsoleError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+          const message = args.join(' ');
+          if (message.includes('KeyRing is locked') || 
+              message.includes('chrome-extension') ||
+              message.includes('injectedScript') ||
+              message.includes('dmkamcknogkgcdfhhbddcghachkejeap')) {
+            return;
+          }
+          originalConsoleWarn.apply(console, args);
+        };
+        
+        // Override window.onerror
+        const originalWindowOnError = window.onerror;
+        window.onerror = function(message, source, lineno, colno, error) {
+          const messageStr = message?.toString().toLowerCase() || '';
+          const sourceStr = source?.toString().toLowerCase() || '';
+          
+          if (messageStr.includes('keyring is locked') ||
+              messageStr.includes('chrome-extension') ||
+              sourceStr.includes('chrome-extension') ||
+              sourceStr.includes('dmkamcknogkgcdfhhbddcghachkejeap')) {
+            return true; // Prevent default error handling
+          }
+          
+          if (originalWindowOnError) {
+            return originalWindowOnError.call(this, message, source, lineno, colno, error);
+          }
+          return false;
+        };
+        
+        // Override window.addEventListener
+        const originalAddEventListener = window.addEventListener;
+        window.addEventListener = function(type, listener, options) {
+          if (type === 'error' && listener.toString().includes('react')) {
+            return; // Don't add React's error listener
+          }
+          return originalAddEventListener.call(this, type, listener, options);
+        };
+        
+        // Add error event listener to catch all errors
+        window.addEventListener('error', function(event) {
+          if (event.error && event.error.message && 
+              (event.error.message.includes('KeyRing is locked') ||
+               event.error.message.includes('chrome-extension') ||
+               event.error.message.includes('injectedScript') ||
+               event.error.message.includes('dmkamcknogkgcdfhhbddcghachkejeap'))) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            return false;
+          }
+        }, true);
+        
+        // Override unhandledrejection
+        window.addEventListener('unhandledrejection', function(event) {
+          if (event.reason && event.reason.message && 
+              (event.reason.message.includes('KeyRing is locked') ||
+               event.reason.message.includes('chrome-extension') ||
+               event.reason.message.includes('injectedScript'))) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+          }
+        }, true);
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

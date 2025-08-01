@@ -11,12 +11,13 @@ if (typeof BigInt === 'undefined') {
 
 // RPC URLs for different networks
 const RPC_URLS = {
-    [NETWORKS.MAINNET]: process.env.REACT_APP_ALCHEMY_RPC_URL || "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA"
+    [NETWORKS.MAINNET]: "https://starknet-mainnet.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA",
+    [NETWORKS.SEPOLIA]: "https://starknet-sepolia.g.alchemy.com/starknet/version/rpc/v0_8/EXk1VtDVCaeNBRAWsi7WA"
 };
 
 // Get current network RPC URL
 const getCurrentRpcUrl = () => {
-    return RPC_URLS[NETWORKS.MAINNET];
+    return RPC_URLS[CURRENT_NETWORK];
 };
 
 const provider = new RpcProvider({
@@ -166,7 +167,20 @@ const GAME_ABI = [
         "name": "get_game_analytics",
         "type": "function", 
         "inputs": [],
-        "outputs": [{"name": "analytics", "type": "felt*"}],
+        "outputs": [
+            {"name": "total_beavers_staked", "type": "felt"},
+            {"name": "total_burr_claimed_low", "type": "felt"},
+            {"name": "total_burr_claimed_high", "type": "felt"},
+            {"name": "total_strk_collected_low", "type": "felt"},
+            {"name": "total_strk_collected_high", "type": "felt"},
+            {"name": "total_burr_burned_low", "type": "felt"},
+            {"name": "total_burr_burned_high", "type": "felt"},
+            {"name": "noob_count", "type": "felt"},
+            {"name": "pro_count", "type": "felt"},
+            {"name": "degen_count", "type": "felt"},
+            {"name": "active_users", "type": "felt"},
+            {"name": "total_upgrades", "type": "felt"}
+        ],
         "stateMutability": "view"
     },
     {
@@ -197,7 +211,8 @@ const GAME_ABI = [
             {"name": "owner", "type": "felt"},
             {"name": "beaver_id", "type": "felt"},
             {"name": "beaver_type", "type": "felt"},
-            {"name": "last_claim_time", "type": "felt"}
+            {"name": "last_claim_time", "type": "felt"},
+            {"name": "original_level", "type": "felt"}
         ],
         "outputs": [],
         "stateMutability": "external"
@@ -550,19 +565,21 @@ export async function connectWallet() {
                 };
             }
         } catch (error) {
-            console.log("❌ Starknetkit modal failed or cancelled:", error.message);
-            
-            // Check for specific wallet lock errors
+            // Suppress console errors for wallet lock issues
             if (error.message && (
                 error.message.includes('KeyRing is locked') ||
                 error.message.includes('wallet is locked') ||
                 error.message.includes('chrome-extension')
             )) {
+                console.log("🔒 Wallet is locked - user needs to unlock");
                 return { 
                     isConnected: false, 
                     error: 'Wallet is locked! Please unlock your ArgentX or Braavos wallet and try again.' 
                 };
             }
+            
+            // Log other errors normally
+            console.log("❌ Starknetkit modal failed or cancelled:", error.message);
             
             // If modal was cancelled or failed, try direct connections silently
         }
@@ -598,19 +615,21 @@ export async function connectWallet() {
                     }
                 }
             } catch (error) {
-                console.log("❌ Direct ArgentX connection failed:", error.message);
-                
-                // Check for wallet locked errors
+                // Suppress console errors for wallet lock issues
                 if (error.message && (
                     error.message.includes('KeyRing is locked') ||
                     error.message.includes('wallet is locked') ||
                     error.message.includes('chrome-extension')
                 )) {
+                    console.log("🔒 ArgentX wallet is locked - user needs to unlock");
                     return { 
                         isConnected: false, 
                         error: 'ArgentX wallet is locked! Please unlock your wallet and try again.' 
                     };
                 }
+                
+                // Log other errors normally
+                console.log("❌ Direct ArgentX connection failed:", error.message);
             }
         }
 
@@ -645,19 +664,21 @@ export async function connectWallet() {
                     }
                 }
             } catch (error) {
-                console.log("❌ Direct Braavos connection failed:", error.message);
-                
-                // Check for wallet locked errors
+                // Suppress console errors for wallet lock issues
                 if (error.message && (
                     error.message.includes('KeyRing is locked') ||
                     error.message.includes('wallet is locked') ||
                     error.message.includes('chrome-extension')
                 )) {
+                    console.log("🔒 Braavos wallet is locked - user needs to unlock");
                     return { 
                         isConnected: false, 
                         error: 'Braavos wallet is locked! Please unlock your wallet and try again.' 
                     };
                 }
+                
+                // Log other errors normally
+                console.log("❌ Direct Braavos connection failed:", error.message);
             }
         }
 
@@ -781,6 +802,88 @@ export async function fetchBalances(address) {
     };
 }
 
+// Helper function to try different address formats for beaver ownership
+async function fetchBeaverWithAddressVariations(beaverId, userAddress, gameContract, provider) {
+    // Try different address formats
+    const addressVariations = [
+        userAddress,
+        userAddress.toLowerCase(),
+        userAddress.toUpperCase(),
+        // Remove leading zeros
+        userAddress.replace(/^0x0+/, '0x'),
+        // Add leading zeros if needed
+        userAddress.startsWith('0x') ? userAddress : '0x' + userAddress,
+        // Normalize address
+        userAddress.toLowerCase().replace(/^0x0+/, '0x')
+    ];
+    
+    // Remove duplicates
+    const uniqueAddresses = [...new Set(addressVariations)];
+    
+    for (const address of uniqueAddresses) {
+        try {
+            console.log(`🔄 Trying address format: ${address} for beaver ${beaverId}`);
+            
+            const beaverDetails = await gameContract.get_beaver(address, beaverId);
+            
+            // Convert owner from felt252 to hex string
+            let ownerAddress = beaverDetails.owner;
+            if (typeof ownerAddress === 'bigint' || typeof ownerAddress === 'number') {
+                ownerAddress = '0x' + ownerAddress.toString(16);
+            }
+            
+            const beaver = {
+                id: Number(beaverId),
+                owner: ownerAddress,
+                type: Number(beaverDetails.beaver_type),
+                level: Number(beaverDetails.level),
+                last_claim_time: Number(beaverDetails.last_claim_time),
+                pendingRewards: BigInt(0)
+            };
+            
+            console.log(`✅ Successfully fetched beaver ${beaverId} with address format: ${address}`);
+            return beaver;
+            
+        } catch (error) {
+            console.log(`❌ Failed with address format: ${address} - ${error.message}`);
+            continue;
+        }
+    }
+    
+    // If all address variations failed, try direct contract call
+    try {
+        console.log(`🔄 Trying direct contract call for beaver ${beaverId}`);
+        
+        const rawBeaverInfo = await provider.callContract({
+            contractAddress: GAME_CONTRACT_ADDRESS,
+            entrypoint: 'get_beaver',
+            calldata: [userAddress, beaverId]
+        });
+        
+        console.log(`🔍 Raw beaver info for ${beaverId}:`, rawBeaverInfo);
+        
+        // Parse the raw result manually
+        if (Array.isArray(rawBeaverInfo) && rawBeaverInfo.length >= 5) {
+            const beaver = {
+                id: Number(beaverId),
+                owner: userAddress, // Use the requested address as owner
+                type: Number(rawBeaverInfo[1]), // beaver_type
+                level: Number(rawBeaverInfo[2]), // level
+                last_claim_time: Number(rawBeaverInfo[3]), // last_claim_time
+                pendingRewards: BigInt(0)
+            };
+            
+            console.log(`✅ Successfully parsed raw beaver info for ${beaverId}`);
+            return beaver;
+        }
+        
+    } catch (directError) {
+        console.log(`❌ Direct contract call also failed: ${directError.message}`);
+    }
+    
+    return null;
+}
+
 // Fetch player info using multicall
 export async function fetchPlayerInfo(address) {
     try {
@@ -814,11 +917,29 @@ export async function fetchPlayerInfo(address) {
             }
             
             // All elements are beaver IDs directly (no length prefix)
-            beaverIds = manualResult.map(id => {
+            // Filter out duplicates and invalid IDs with more robust deduplication
+            const rawIds = manualResult.map(id => {
                 const numId = parseInt(id, 16);
                 console.log(`🔄 Converting ${id} -> ${numId}`);
                 return numId;
             }).filter(id => id > 0);
+            
+            // Remove duplicates using Set and additional validation
+            const uniqueIds = new Set();
+            const validIds = [];
+            
+            for (const id of rawIds) {
+                if (!uniqueIds.has(id) && id > 0 && id < 1000000) { // Reasonable range check
+                    uniqueIds.add(id);
+                    validIds.push(id);
+                } else {
+                    console.log(`🔄 Skipping invalid/duplicate beaver ID: ${id}`);
+                }
+            }
+            
+            beaverIds = validIds;
+            console.log('🦫 Raw beaver IDs (with duplicates):', rawIds);
+            console.log('🦫 Unique beaver IDs (after deduplication):', beaverIds);
         }
         
         console.log('🦫 Parsed beaver IDs:', beaverIds);
@@ -835,104 +956,64 @@ export async function fetchPlayerInfo(address) {
         // Fetch details for each beaver individually
         const beavers = [];
         let totalHourlyRate = 0;
+        const processedBeaverIds = new Set(); // Track processed beaver IDs to avoid duplicates
+        let successfulBeavers = 0;
+        let failedBeavers = 0;
         
         for (const beaverId of beaverIds) {
-            try {
-                console.log(`🦫 Fetching beaver ${beaverId} for user ${formattedAddress}`);
-                
-                // Get beaver details - pass address and beaver_id
-                const beaverDetails = await gameContract.get_beaver(formattedAddress, beaverId);
-                
-                // Convert owner from felt252 to hex string
-                let ownerAddress = beaverDetails.owner;
-                if (typeof ownerAddress === 'bigint' || typeof ownerAddress === 'number') {
-                    ownerAddress = '0x' + ownerAddress.toString(16);
-                }
-                
-                const beaver = {
-                    id: Number(beaverId),
-                    owner: ownerAddress,
-                    type: Number(beaverDetails.beaver_type),
-                    level: Number(beaverDetails.level),
-                    last_claim_time: Number(beaverDetails.last_claim_time),
-                    pendingRewards: BigInt(0) // Will calculate proportionally below
-                };
-                
-                // Debug ownership
-                console.log(`🔍 Ownership check for beaver ${beaverId}:`);
-                console.log(`  Contract owner: ${beaver.owner}`);
-                console.log(`  Requested user: ${formattedAddress}`);
-                console.log(`  Owner (lower): ${beaver.owner.toLowerCase()}`);
-                console.log(`  User (lower): ${formattedAddress.toLowerCase()}`);
-                
-                // Normalize addresses for comparison (remove leading zeros)
-                const normalizeAddress = (addr) => {
-                    if (!addr) return '';
-                    let normalized = addr.toLowerCase();
-                    if (normalized.startsWith('0x')) {
-                        normalized = '0x' + normalized.slice(2).replace(/^0+/, '');
-                    }
-                    return normalized;
-                };
-                
-                const normalizedOwner = normalizeAddress(beaver.owner);
-                const normalizedUser = normalizeAddress(formattedAddress);
-                
-                console.log(`  Normalized owner: ${normalizedOwner}`);
-                console.log(`  Normalized user: ${normalizedUser}`);
-                
-                if (normalizedOwner !== normalizedUser) {
-                    console.warn(`⚠️ Ownership mismatch for beaver ${beaverId}: owner=${normalizedOwner}, requested=${normalizedUser}`);
-                    continue;
-                }
-                
-                // Calculate hourly rate for this beaver (matching contract logic)
-                const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
-                const baseRate = baseRates[beaver.type] || 300;
-                
-                // Use exact contract level multipliers (divided by 1000)
-                const getContractLevelMultiplier = (level) => {
-                    if (level === 1) return 1000;      // 1.0x
-                    else if (level === 2) return 1500; // 1.5x  
-                    else if (level === 3) return 2250; // 2.25x
-                    else if (level === 4) return 3375; // 3.375x
-                    else return 5062;                  // 5.0625x (level 5)
-                };
-                
-                const levelMultiplier = getContractLevelMultiplier(beaver.level) / 1000;
-                const hourlyRate = baseRate * levelMultiplier;
-                totalHourlyRate += hourlyRate;
-                
-                beaver.hourlyRate = hourlyRate;
-                
-                beavers.push(beaver);
-                console.log(`✅ Successfully fetched beaver ${beaverId}`);
-                
-            } catch (error) {
-                console.error(`❌ Error fetching beaver ${beaverId}:`, error);
-                if (error.message && error.message.includes('Not beaver owner')) {
-                    console.warn(`⚠️ Beaver ${beaverId} does not belong to user ${formattedAddress}`);
-                    console.warn(`🔧 This might be an old beaver that needs migration. Consider using import_beaver.`);
-                    
-                    // Create a placeholder beaver for old ones (for display purposes)
-                    const placeholderBeaver = {
-                        id: Number(beaverId),
-                        owner: formattedAddress,
-                        type: 0, // Default to Noob
-                        level: 1, // Default level
-                        last_claim_time: 0,
-                        pendingRewards: BigInt(0),
-                        hourlyRate: 300, // Default Noob rate
-                        isLegacy: true, // Mark as legacy/needs migration
-                        error: 'Migration required'
-                    };
-                    
-                    beavers.push(placeholderBeaver);
-                    console.log(`⚠️ Added placeholder for legacy beaver ${beaverId}`);
-                }
-                // Continue with next beaver instead of breaking
+            // Skip if we already processed this beaver ID
+            if (processedBeaverIds.has(beaverId)) {
+                console.log(`🔄 Skipping duplicate beaver ID: ${beaverId}`);
                 continue;
             }
+            processedBeaverIds.add(beaverId);
+            
+            console.log(`🦫 Fetching beaver ${beaverId} for user ${formattedAddress}`);
+            
+            // Use the new helper function to try different address formats
+            const beaver = await fetchBeaverWithAddressVariations(beaverId, formattedAddress, gameContract, provider);
+            
+            if (!beaver) {
+                console.log(`❌ Could not fetch beaver ${beaverId} - this might be an imported beaver with ownership issues`);
+                failedBeavers++;
+                continue;
+            }
+            
+            // Additional validation: check if beaver data is reasonable
+            if (beaver.type < 0 || beaver.type > 2) {
+                console.warn(`⚠️ Invalid beaver type for beaver ${beaverId}: ${beaver.type}`);
+                failedBeavers++;
+                continue;
+            }
+            
+            if (beaver.level < 1 || beaver.level > 5) {
+                console.warn(`⚠️ Invalid beaver level for beaver ${beaverId}: ${beaver.level}`);
+                failedBeavers++;
+                continue;
+            }
+            
+            // Calculate hourly rate for this beaver (matching contract logic)
+            const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
+            const baseRate = baseRates[beaver.type] || 300;
+            
+            // Use exact contract level multipliers (divided by 1000)
+            const getContractLevelMultiplier = (level) => {
+                if (level === 1) return 1000;      // 1.0x
+                else if (level === 2) return 1500; // 1.5x  
+                else if (level === 3) return 2250; // 2.25x
+                else if (level === 4) return 3375; // 3.375x
+                else return 5062;                  // 5.0625x (level 5)
+            };
+            
+            const levelMultiplier = getContractLevelMultiplier(beaver.level) / 1000;
+            const hourlyRate = baseRate * levelMultiplier;
+            totalHourlyRate += hourlyRate;
+            
+            beaver.hourlyRate = hourlyRate;
+            
+            beavers.push(beaver);
+            successfulBeavers++;
+            console.log(`✅ Successfully processed beaver ${beaverId} (Type: ${beaver.type}, Level: ${beaver.level}, Rate: ${hourlyRate})`);
         }
         
         // Distribute total pending rewards proportionally based on hourly rates
@@ -946,7 +1027,16 @@ export async function fetchPlayerInfo(address) {
             }
         }
         
-        return { beavers, totalRewards: formatBalance(totalPendingBigInt, 18) };
+        console.log(`📊 Final result: ${successfulBeavers} successful beavers, ${failedBeavers} failed beavers, total hourly rate: ${totalHourlyRate}`);
+        
+        // If we have some successful beavers, show them even if some failed
+        if (successfulBeavers > 0) {
+            console.log(`✅ Showing ${successfulBeavers} beavers to user (${failedBeavers} failed due to ownership issues)`);
+            return { beavers, totalRewards: formatBalance(totalPendingBigInt, 18) };
+        } else {
+            console.log(`❌ No beavers could be fetched successfully`);
+            return { beavers: [], totalRewards: formatBalance(totalPendingBigInt, 18) };
+        }
         
     } catch (error) {
         console.log("💥 fetchPlayerInfo error:", error);
@@ -1345,9 +1435,36 @@ export async function fetchGameAnalytics() {
     try {
         console.log('🔍 Fetching game analytics...');
         const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
-        const analytics = await gameContract.get_game_analytics();
+        const rawAnalytics = await gameContract.get_game_analytics();
         
-        console.log('📊 Analytics received:', analytics);
+        console.log('📊 Raw analytics received:', rawAnalytics);
+        console.log('📊 Raw analytics type:', typeof rawAnalytics);
+        console.log('📊 Raw analytics length:', rawAnalytics?.length);
+        
+        // Check if rawAnalytics is valid
+        if (!rawAnalytics || !Array.isArray(rawAnalytics) || rawAnalytics.length < 12) {
+            console.error('❌ Invalid analytics data:', rawAnalytics);
+            return null;
+        }
+        
+        // Parse the raw analytics data
+        // Format: [total_beavers_staked, total_burr_claimed_low, total_burr_claimed_high, 
+        //         total_strk_collected_low, total_strk_collected_high, total_burr_burned_low, 
+        //         total_burr_burned_high, noob_count, pro_count, degen_count, active_users, total_upgrades]
+        
+        const analytics = {
+            total_beavers_staked: Number(rawAnalytics[0] || 0),
+            total_burr_claimed: BigInt(rawAnalytics[1] || 0) + (BigInt(rawAnalytics[2] || 0) << 128n),
+            total_strk_collected: BigInt(rawAnalytics[3] || 0) + (BigInt(rawAnalytics[4] || 0) << 128n),
+            total_burr_burned: BigInt(rawAnalytics[5] || 0) + (BigInt(rawAnalytics[6] || 0) << 128n),
+            noob_count: Number(rawAnalytics[7] || 0),
+            pro_count: Number(rawAnalytics[8] || 0),
+            degen_count: Number(rawAnalytics[9] || 0),
+            active_users: Number(rawAnalytics[10] || 0),
+            total_upgrades: Number(rawAnalytics[11] || 0)
+        };
+        
+        console.log('📊 Parsed analytics:', analytics);
         return analytics;
     } catch (error) {
         console.error('❌ Analytics fetch error:', error);
@@ -1386,16 +1503,16 @@ export async function fetchStakingCosts() {
 }
 
 // Import beaver (migration function)
-export async function importBeaver(owner, beaverId, beaverType, lastClaimTime) {
+export async function importBeaver(owner, beaverId, beaverType, lastClaimTime, originalLevel) {
     if (!currentConnection || !currentConnection.isConnected) {
         throw new Error("Wallet not connected");
     }
     
     try {
-        console.log('🔄 Importing beaver...', {owner, beaverId, beaverType, lastClaimTime});
+        console.log('🔄 Importing beaver...', {owner, beaverId, beaverType, lastClaimTime, originalLevel});
         
         const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, currentConnection.account);
-        const result = await gameContract.import_beaver(owner, beaverId, beaverType, lastClaimTime);
+        const result = await gameContract.import_beaver(owner, beaverId, beaverType, lastClaimTime, originalLevel);
         
         console.log('✅ Beaver import successful:', result);
         return result;

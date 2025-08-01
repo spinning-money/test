@@ -20,9 +20,11 @@ import {
   fetchPendingRewards
 } from './utils/starknet';
 import TokenInfo from './components/TokenInfo';
+
 import ToastContainer, { showToast } from './components/ToastContainer';
 import Header from './components/Header';
 import './index.css';
+
 
 
 function App() {
@@ -97,7 +99,8 @@ function App() {
           event.filename.includes('chrome-extension') ||
           event.filename.includes('injectedScript') ||
           event.filename.includes('extension') ||
-          event.filename.includes('dmkamcknogkgcdfhhbddcghachkejeap'))) {
+          event.filename.includes('dmkamcknogkgcdfhhbddcghachkejeap') ||
+          event.filename.includes('nkbihfbeogaeaoehlefnkodbefgpgknn'))) {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
@@ -110,12 +113,24 @@ function App() {
         if (stackTrace.includes('chrome-extension') ||
             stackTrace.includes('injectedscript') ||
             stackTrace.includes('extension') ||
-            stackTrace.includes('dmkamcknogkgcdfhhbddcghachkejeap')) {
+            stackTrace.includes('dmkamcknogkgcdfhhbddcghachkejeap') ||
+            stackTrace.includes('nkbihfbeogaeaoehlefnkodbefgpgknn') ||
+            stackTrace.includes('metamask')) {
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
           return false;
         }
+      }
+      
+      // Additional check for the specific error pattern
+      if (event.error && event.error.message && 
+          event.error.message.includes('KeyRing is locked') &&
+          event.error.stack && event.error.stack.includes('chrome-extension')) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        return false;
       }
     };
 
@@ -131,6 +146,7 @@ function App() {
             messageStr.includes('chrome-extension') ||
             messageStr.includes('injectedscript') ||
             messageStr.includes('metamask') ||
+            messageStr.includes('failed to connect to metamask') ||
             reasonStr.includes('extension')) {
           event.preventDefault();
           event.stopPropagation();
@@ -148,8 +164,10 @@ function App() {
       if (messageStr.includes('keyring is locked') ||
           messageStr.includes('wallet is locked') ||
           messageStr.includes('chrome-extension') ||
+          messageStr.includes('failed to connect to metamask') ||
           sourceStr.includes('chrome-extension') ||
-          sourceStr.includes('extension')) {
+          sourceStr.includes('extension') ||
+          sourceStr.includes('nkbihfbeogaeaoehlefnkodbefgpgknn')) {
         // Prevent browser from showing error popup
         return true; // true prevents the default browser error handling
       }
@@ -163,6 +181,31 @@ function App() {
     // Add event listeners with capture = true to catch errors early
     window.addEventListener('error', handleError, true);
     window.addEventListener('unhandledrejection', handleUnhandledRejection, true);
+    
+    // Disable React error overlay for wallet extension errors
+    if (process.env.NODE_ENV === 'development') {
+      const originalConsoleError = console.error;
+      console.error = (...args) => {
+        const message = args.join(' ');
+        if (message.includes('KeyRing is locked') || 
+            message.includes('chrome-extension') ||
+            message.includes('injectedScript')) {
+          // Suppress wallet extension errors from React error overlay
+          return;
+        }
+        originalConsoleError.apply(console, args);
+      };
+      
+      // Override React's error overlay
+      const originalWindowAddEventListener = window.addEventListener;
+      window.addEventListener = function(type, listener, options) {
+        if (type === 'error' && listener.toString().includes('react')) {
+          // Don't add React's error listener
+          return;
+        }
+        return originalWindowAddEventListener.call(this, type, listener, options);
+      };
+    }
     
     return () => {
       // Restore original functions
@@ -884,6 +927,8 @@ function App() {
 
 
 
+
+
             <button 
               onClick={isConnected ? async () => {
                 // Stop connection monitoring
@@ -1004,6 +1049,9 @@ function App() {
 
         {/* Token Info */}
         <TokenInfo />
+        
+        {/* Game Statistics */}
+
 
         <div className="grid grid-2">
           {/* Stake Section */}
@@ -1288,11 +1336,11 @@ function App() {
               </div>
               <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                 <span>Level 4:</span>
-                <strong style={{color: 'var(--accent-orange)'}}>3.38x</strong>
+                <strong style={{color: 'var(--accent-orange)'}}>3.375x</strong>
               </div>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
                 <span>Level 5:</span>
-                <strong style={{color: 'var(--accent-orange)'}}>5.06x</strong>
+                <strong style={{color: 'var(--accent-orange)'}}>5.0625x</strong>
               </div>
             </div>
           </div>
@@ -1313,21 +1361,86 @@ function App() {
                   <BeaverImage beaverType={1} size="16px" />
                   Noob:
                 </span>
-                <strong style={{color: 'var(--accent-orange)'}}>200K $BURR</strong>
+                <strong style={{color: 'var(--accent-orange)'}}>240K $BURR</strong>
               </div>
               <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <BeaverImage beaverType={2} size="16px" />
                   Pro:
                 </span>
-                <strong style={{color: 'var(--accent-orange)'}}>400K $BURR</strong>
+                <strong style={{color: 'var(--accent-orange)'}}>480K $BURR</strong>
               </div>
               <div style={{display: 'flex', justifyContent: 'space-between'}}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <BeaverImage beaverType={3} size="16px" />
                   Degen:
                 </span>
-                <strong style={{color: 'var(--accent-orange)'}}>1.02M $BURR</strong>
+                <strong style={{color: 'var(--accent-orange)'}}>1.22M $BURR</strong>
+              </div>
+            </div>
+            <div style={{marginTop: '15px', padding: '10px', backgroundColor: 'rgba(255, 165, 0, 0.1)', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--text-light)'}}>
+              <strong>💡 Note:</strong> Level 3+ upgrade costs are doubled!
+            </div>
+          </div>
+        </div>
+
+        {/* Upgrade Cost Details */}
+        <div style={{
+          marginTop: '25px',
+          padding: '20px',
+          backgroundColor: 'var(--card-bg)',
+          borderRadius: '15px',
+          border: '2px solid var(--accent-purple)'
+        }}>
+          <h4 style={{color: 'var(--accent-purple)', marginBottom: '15px', textAlign: 'center'}}>
+            📊 Upgrade Cost Breakdown
+          </h4>
+          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
+            {/* Noob Upgrade Costs */}
+            <div style={{padding: '15px', backgroundColor: 'rgba(255, 165, 0, 0.1)', borderRadius: '10px'}}>
+              <h5 style={{color: 'var(--accent-orange)', marginBottom: '10px', textAlign: 'center'}}>
+                <BeaverImage beaverType={1} size="16px" /> Noob Beaver
+              </h5>
+              <div style={{lineHeight: '1.6', fontSize: '0.9rem'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 1→2: <strong>40K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 2→3: <strong>40K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 3→4: <strong>80K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 4→5: <strong>80K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 165, 0, 0.3)'}}>
+                  <strong>Total to Level 5:</strong> <strong style={{color: 'var(--accent-orange)'}}>240K BURR</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Pro Upgrade Costs */}
+            <div style={{padding: '15px', backgroundColor: 'rgba(0, 255, 0, 0.1)', borderRadius: '10px'}}>
+              <h5 style={{color: 'var(--accent-green)', marginBottom: '10px', textAlign: 'center'}}>
+                <BeaverImage beaverType={2} size="16px" /> Pro Beaver
+              </h5>
+              <div style={{lineHeight: '1.6', fontSize: '0.9rem'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 1→2: <strong>80K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 2→3: <strong>80K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 3→4: <strong>160K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 4→5: <strong>160K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(0, 255, 0, 0.3)'}}>
+                  <strong>Total to Level 5:</strong> <strong style={{color: 'var(--accent-green)'}}>480K BURR</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Degen Upgrade Costs */}
+            <div style={{padding: '15px', backgroundColor: 'rgba(255, 0, 0, 0.1)', borderRadius: '10px'}}>
+              <h5 style={{color: 'var(--accent-red)', marginBottom: '10px', textAlign: 'center'}}>
+                <BeaverImage beaverType={3} size="16px" /> Degen Beaver
+              </h5>
+              <div style={{lineHeight: '1.6', fontSize: '0.9rem'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 1→2: <strong>203K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 2→3: <strong>203K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 3→4: <strong>406K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>Level 4→5: <strong>406K BURR</strong></div>
+                <div style={{display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255, 0, 0, 0.3)'}}>
+                  <strong>Total to Level 5:</strong> <strong style={{color: 'var(--accent-red)'}}>1.22M BURR</strong>
+                </div>
               </div>
             </div>
           </div>
