@@ -884,9 +884,9 @@ export async function fetchPlayerInfo(address) {
                     
                     beaverDetails = {
                         id: beaverId,
-                        type: parseInt(rawType) || 0,
-                        level: parseInt(rawLevel) || 1,
-                        last_claim_time: parseInt(rawLastClaim) || 0,
+                        type: parseInt(rawType, 16) || 0, // Parse as hex
+                        level: parseInt(rawLevel, 16) || 1, // Parse as hex
+                        last_claim_time: parseInt(rawLastClaim, 16) || 0, // Parse as hex
                         owner: formattedAddress
                     };
                     
@@ -894,6 +894,13 @@ export async function fetchPlayerInfo(address) {
                     console.log(`📊 Type conversion: ${rawType} -> ${beaverDetails.type}`);
                 } else {
                     console.log(`⚠️ Invalid beaver result for ${beaverId}:`, beaverResult);
+                }
+                
+                // Debug: Check if we actually got valid details
+                if (beaverDetails) {
+                    console.log(`✅ Successfully parsed beaver ${beaverId} details:`, beaverDetails);
+                } else {
+                    console.log(`⚠️ No valid details for beaver ${beaverId}, will use defaults`);
                 }
             } catch (error) {
                 console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
