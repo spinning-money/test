@@ -814,11 +814,43 @@ export async function fetchPlayerInfo(address) {
             }
             
             // All elements are beaver IDs directly (no length prefix)
-            beaverIds = manualResult.map(id => {
+            const allBeaverIds = manualResult.map(id => {
                 const numId = parseInt(id, 16);
                 console.log(`🔄 Converting ${id} -> ${numId}`);
                 return numId;
             }).filter(id => id > 0);
+            
+            console.log('🦫 All beaver IDs from contract:', allBeaverIds);
+            
+            // Test each beaver ID to see if it's really owned by this user
+            console.log('🔍 Testing ownership for each beaver...');
+            
+            for (const beaverId of allBeaverIds) {
+                try {
+                    const testResult = await provider.callContract({
+                        contractAddress: GAME_CONTRACT_ADDRESS,
+                        entrypoint: 'get_beaver',
+                        calldata: [formattedAddress, beaverId.toString()]
+                    });
+                    
+                    if (testResult.result && testResult.result.length >= 5) {
+                        const rawOwner = testResult.result[4];
+                        const owner = '0x' + BigInt(rawOwner).toString(16);
+                        
+                        // Check if this beaver is really owned by the user
+                        if (owner.toLowerCase() === formattedAddress.toLowerCase()) {
+                            beaverIds.push(beaverId);
+                            console.log(`✅ Beaver ${beaverId} is really owned by user`);
+                        } else {
+                            console.log(`❌ Beaver ${beaverId} is not owned by user (owner: ${owner})`);
+                        }
+                    }
+                } catch (error) {
+                    console.log(`❌ Beaver ${beaverId} failed ownership test:`, error.message);
+                }
+            }
+            
+            console.log('🦫 Valid beaver IDs (really owned):', beaverIds);
         }
         
         console.log('🦫 Parsed beaver IDs:', beaverIds);
