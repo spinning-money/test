@@ -1668,8 +1668,20 @@ export async function fetchActiveUsersCount() {
         const activeUsers = await gameContract.get_active_users_count();
         
         console.log('📊 Raw active users result:', activeUsers);
+        console.log('📊 Active users type:', typeof activeUsers);
+        console.log('📊 Active users value:', activeUsers);
         
-        const activeUsersNumber = parseInt(activeUsers);
+        // Handle different response types
+        let activeUsersNumber = 0;
+        if (typeof activeUsers === 'number') {
+            activeUsersNumber = activeUsers;
+        } else if (typeof activeUsers === 'string') {
+            activeUsersNumber = parseInt(activeUsers);
+        } else if (activeUsers && typeof activeUsers === 'object') {
+            // If it's an object, try to get the value
+            activeUsersNumber = parseInt(activeUsers.toString());
+        }
+        
         console.log('✅ Active users count fetched:', activeUsersNumber);
         return activeUsersNumber;
     } catch (error) {
