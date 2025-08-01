@@ -827,6 +827,7 @@ export async function fetchPlayerInfo(address) {
                         lastClaimTime = parseInt(rawLastClaim, 16);
                         
                         console.log(`✅ Found beaver ${beaverId} in old contract: Type=${beaverType}, Level=${beaverLevel}`);
+                        console.log(`🎯 Using old contract data for beaver ${beaverId}`);
                     } else {
                         console.log(`⚠️ No valid data in old contract for beaver ${beaverId}`);
                     }
