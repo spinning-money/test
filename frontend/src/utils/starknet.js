@@ -735,30 +735,30 @@ export async function fetchPlayerInfo(address) {
         };
         
         const getImportedBeaverType = (beaverId) => {
-            // Based on old contract data, most imported beavers are Degen (type 2)
-            // Specific mapping for known beavers
+            // Based on old contract data and user feedback, these beavers were imported as Noob (0)
+            // but they should be Degen (2). This is a frontend override to fix the import mistake.
             const beaverTypeMap = {
-                40: 2,   // Degen
-                35: 2,   // Degen
-                37: 2,   // Degen
-                41: 2,   // Degen
-                43: 2,   // Degen
-                45: 2,   // Degen
-                34953: 2, // Degen
-                34960: 2, // Degen
-                6: 2,    // Degen
-                8: 2,    // Degen
-                9: 2,    // Degen
-                10: 2,   // Degen
-                14: 2,   // Degen
-                16: 2,   // Degen
-                17: 2,   // Degen
-                20: 2,   // Degen
-                30: 2,   // Degen
-                32: 2    // Degen
+                40: 2,   // Degen (was imported as Noob)
+                35: 2,   // Degen (was imported as Noob)
+                37: 2,   // Degen (was imported as Noob)
+                41: 2,   // Degen (was imported as Noob)
+                43: 2,   // Degen (was imported as Noob)
+                45: 2,   // Degen (was imported as Noob)
+                34953: 2, // Degen (was imported as Noob)
+                34960: 2, // Degen (was imported as Noob)
+                6: 2,    // Degen (was imported as Noob)
+                8: 2,    // Degen (was imported as Noob)
+                9: 2,    // Degen (was imported as Noob)
+                10: 2,   // Degen (was imported as Noob)
+                14: 2,   // Degen (was imported as Noob)
+                16: 2,   // Degen (was imported as Noob)
+                17: 2,   // Degen (was imported as Noob)
+                20: 2,   // Degen (was imported as Noob)
+                30: 2,   // Degen (was imported as Noob)
+                32: 2    // Degen (was imported as Noob)
             };
             
-            return beaverTypeMap[beaverId] || 2; // Default to Degen for imported beavers
+            return beaverTypeMap[beaverId] || 0; // Default to Noob for unknown beavers
         };
         
         for (const beaverId of beaverIds) {
