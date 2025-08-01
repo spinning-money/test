@@ -939,8 +939,8 @@ export async function fetchPlayerInfo(address) {
                             if (importedBeaverTypeMap[beaverId]) {
                                 // Bilinen import edilen beaver
                                 beaverType = importedBeaverTypeMap[beaverId];
-                            } else if (beaverId < 1000) {
-                                // Küçük ID'li beaver'lar (import edilmiş) → Statistical distribution
+                            } else if (beaverId <= 420) {
+                                // Import edilen beaver'lar (ID 1-420) → Statistical distribution
                                 // %50 Degen, %20 Pro, %30 Noob
                                 const hash = beaverId.toString().split('').reduce((a, b) => {
                                     a = ((a << 5) - a) + b.charCodeAt(0);
@@ -956,8 +956,8 @@ export async function fetchPlayerInfo(address) {
                                     beaverType = 0; // Noob (30%)
                                 }
                             } else {
-                                // Büyük ID'li beaver'lar (yeni) → Pro (varsayılan)
-                                beaverType = 1;
+                                // Yeni beaver'lar (ID > 420) → Gerçek type'ı kullan
+                                beaverType = 1; // Pro (varsayılan)
                             }
                         }
                         const placeholderBeaver = {
@@ -965,7 +965,7 @@ export async function fetchPlayerInfo(address) {
                             owner: formattedAddress,
                             type: beaverType, // Use correct type from mapping
                             level: 1, // Default to level 1
-                            last_claim_time: Math.floor(Date.now() / 1000), // Current time
+                            last_claim_time: Math.floor(Date.now() / 1000), // Current time (fix for imported beavers with future timestamps)
                             pendingRewards: BigInt(0)
                         };
                         
