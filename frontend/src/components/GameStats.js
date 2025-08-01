@@ -77,7 +77,7 @@ const GameStats = () => {
         return null;
     }
 
-    const { analytics, typeStats, totalClaimedBurr, activeUsersCount, contractBalances, gameInfo } = gameData;
+    const { analytics, typeStats, activeUsersCount } = gameData;
 
     return (
         <div className="game-stats">
@@ -118,59 +118,6 @@ const GameStats = () => {
                         <div className="stat-card degen">
                             <div className="stat-value">{formatNumber(typeStats.degenCount)}</div>
                             <div className="stat-label">Degen Beavers</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Token Statistics */}
-                <div className="stats-section">
-                    <h3>💰 Token Statistics</h3>
-                    <div className="stats-cards">
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(analytics.totalBurrClaimed)}</div>
-                            <div className="stat-label">Total BURR Claimed</div>
-                        </div>
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(analytics.totalStrkCollected)}</div>
-                            <div className="stat-label">Total STRK Collected</div>
-                        </div>
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(analytics.totalBurrBurned)}</div>
-                            <div className="stat-label">Total BURR Burned</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Contract Balances */}
-                <div className="stats-section">
-                    <h3>🏦 Contract Balances</h3>
-                    <div className="stats-cards">
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(contractBalances.strkBalance)}</div>
-                            <div className="stat-label">STRK Balance</div>
-                        </div>
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(contractBalances.burrBalance)}</div>
-                            <div className="stat-label">BURR Balance</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Game Status */}
-                <div className="stats-section">
-                    <h3>🎯 Game Status</h3>
-                    <div className="stats-cards">
-                        <div className="stat-card">
-                            <div className="stat-value">{gameInfo.isEnded ? 'Ended' : 'Active'}</div>
-                            <div className="stat-label">Game Status</div>
-                        </div>
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(gameInfo.totalMinted)}</div>
-                            <div className="stat-label">Total Minted</div>
-                        </div>
-                        <div className="stat-card">
-                            <div className="stat-value">{formatBalance(gameInfo.maxRewardPool)}</div>
-                            <div className="stat-label">Max Reward Pool</div>
                         </div>
                     </div>
                 </div>

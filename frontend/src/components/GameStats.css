@@ -1,19 +1,19 @@
 .game-stats {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    border-radius: 20px;
-    padding: 30px;
+    background: var(--primary-dark);
+    border: 3px solid var(--primary-brown);
+    border-radius: 15px;
+    padding: 25px;
     margin: 20px 0;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
 .game-stats h2 {
-    color: #fff;
+    color: var(--accent-orange);
     text-align: center;
-    margin-bottom: 30px;
-    font-size: 2.5rem;
+    margin-bottom: 25px;
+    font-size: 2rem;
     font-weight: bold;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    font-family: 'Comic Sans MS', cursive;
 }
 
 .stats-grid {
@@ -24,19 +24,20 @@
 }
 
 .stats-section {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
+    background: var(--primary-dark);
+    border: 2px solid var(--primary-brown);
+    border-radius: 12px;
     padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    margin-bottom: 20px;
 }
 
 .stats-section h3 {
-    color: #fff;
-    margin-bottom: 20px;
-    font-size: 1.3rem;
-    font-weight: 600;
+    color: var(--accent-orange);
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    font-weight: bold;
     text-align: center;
+    font-family: 'Comic Sans MS', cursive;
 }
 
 .stats-cards {
@@ -46,11 +47,11 @@
 }
 
 .stat-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border-radius: 12px;
+    background: var(--primary-dark);
+    border: 2px solid var(--primary-brown);
+    border-radius: 10px;
     padding: 15px;
     text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
@@ -58,8 +59,8 @@
 
 .stat-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 25px rgba(139, 69, 19, 0.3);
+    border-color: var(--accent-orange);
 }
 
 .stat-card::before {
@@ -78,15 +79,14 @@
 }
 
 .stat-value {
-    color: #fff;
+    color: var(--accent-orange);
     font-size: 1.8rem;
     font-weight: bold;
     margin-bottom: 8px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .stat-label {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-light);
     font-size: 0.9rem;
     font-weight: 500;
 }
