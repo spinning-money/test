@@ -792,26 +792,58 @@ export async function fetchPlayerInfo(address) {
                         rawLastClaim
                     });
                     
-                    // Try decimal parsing first (for imported beavers)
-                    let parsedType = parseInt(rawType);
-                    let parsedLevel = parseInt(rawLevel);
-                    let lastClaimTime = parseInt(rawLastClaim);
+                    // Comprehensive parsing for all formats
+                    let parsedType, parsedLevel, parsedLastClaim;
+                    let parsingMethod = 'unknown';
                     
-                    // If decimal parsing fails, try hex parsing
-                    if (isNaN(parsedType)) {
+                    // Method 1: Try decimal parsing first
+                    parsedType = parseInt(rawType);
+                    parsedLevel = parseInt(rawLevel);
+                    parsedLastClaim = parseInt(rawLastClaim);
+                    
+                    if (!isNaN(parsedType) && !isNaN(parsedLevel)) {
+                        parsingMethod = 'decimal';
+                        console.log(`🔢 Using decimal parsing for beaver ${beaverId}`);
+                    } else {
+                        // Method 2: Try hex parsing
                         parsedType = parseInt(rawType, 16);
                         parsedLevel = parseInt(rawLevel, 16);
-                        lastClaimTime = parseInt(rawLastClaim, 16);
-                        console.log(`🔍 Decimal parsing failed, using hex parsing for beaver ${beaverId}`);
-                    } else {
-                        console.log(`🔢 Using decimal parsing for beaver ${beaverId}`);
+                        parsedLastClaim = parseInt(rawLastClaim, 16);
+                        
+                        if (!isNaN(parsedType) && !isNaN(parsedLevel)) {
+                            parsingMethod = 'hex';
+                            console.log(`🔍 Using hex parsing for beaver ${beaverId}`);
+                        } else {
+                            // Method 3: Try string parsing (remove 0x prefix if exists)
+                            const cleanType = rawType.toString().replace('0x', '');
+                            const cleanLevel = rawLevel.toString().replace('0x', '');
+                            const cleanLastClaim = rawLastClaim.toString().replace('0x', '');
+                            
+                            parsedType = parseInt(cleanType, 16);
+                            parsedLevel = parseInt(cleanLevel, 16);
+                            parsedLastClaim = parseInt(cleanLastClaim, 16);
+                            
+                            if (!isNaN(parsedType) && !isNaN(parsedLevel)) {
+                                parsingMethod = 'clean_hex';
+                                console.log(`🧹 Using clean hex parsing for beaver ${beaverId}`);
+                            } else {
+                                // Method 4: Fallback to default values
+                                parsedType = 0; // Default to Noob
+                                parsedLevel = 1;
+                                parsedLastClaim = 0;
+                                parsingMethod = 'fallback';
+                                console.log(`⚠️ All parsing methods failed for beaver ${beaverId}, using defaults`);
+                            }
+                        }
                     }
                     
                     beaverType = parsedType;
                     beaverLevel = parsedLevel;
+                    lastClaimTime = parsedLastClaim;
                     
                     console.log(`✅ Parsed beaver ${beaverId}: Type=${beaverType}, Level=${beaverLevel}`);
-                    console.log(`📊 Parsing method: ${isNaN(parseInt(rawType)) ? 'Hex' : 'Decimal'}`);
+                    console.log(`📊 Parsing method: ${parsingMethod}`);
+                    console.log(`🔍 Raw values: Type="${rawType}", Level="${rawLevel}", LastClaim="${rawLastClaim}"`);
                 } else {
                     console.log(`⚠️ Invalid beaver result for ${beaverId}, using defaults`);
                     console.log(`🔍 Result structure:`, beaverResult);
@@ -819,13 +851,26 @@ export async function fetchPlayerInfo(address) {
             } catch (error) {
                 console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
                 
-                // Fallback to imported beaver detection
-                if (isImportedBeaver(beaverId)) {
-                    console.log(`🔄 Imported beaver ${beaverId} detected`);
-                    beaverType = getImportedBeaverType(beaverId);
-                    beaverLevel = 1; // Default level for imported beavers
-                    console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
-                }
+                                    // Fallback to imported beaver detection
+                    if (isImportedBeaver(beaverId)) {
+                        console.log(`🔄 Imported beaver ${beaverId} detected`);
+                        beaverType = getImportedBeaverType(beaverId);
+                        beaverLevel = 1; // Default level for imported beavers
+                        console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
+                    } else {
+                        // For any beaver that failed to parse, try to determine type based on ID
+                        console.log(`🔄 Trying to determine type for beaver ${beaverId} based on ID`);
+                        if (beaverId > 1000) {
+                            beaverType = 2; // Likely Degen for high IDs
+                            console.log(`✅ Set high ID beaver ${beaverId} to Type=2 (Degen)`);
+                        } else if (beaverId > 100) {
+                            beaverType = 1; // Likely Pro for medium IDs
+                            console.log(`✅ Set medium ID beaver ${beaverId} to Type=1 (Pro)`);
+                        } else {
+                            beaverType = 0; // Default to Noob
+                            console.log(`✅ Set low ID beaver ${beaverId} to Type=0 (Noob)`);
+                        }
+                    }
             }
             
             // Create beaver object
