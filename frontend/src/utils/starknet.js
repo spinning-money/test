@@ -916,31 +916,49 @@ export async function fetchPlayerInfo(address) {
                             34960: 0  // Noob
                         };
                         
-                        // Statistical detection: Import edilen beaver'lar için gerçek dağılım
+                        // Try to get real type from contract first, fallback to statistical distribution
                         let beaverType = 2; // Default to Degen
                         
-                        if (importedBeaverTypeMap[beaverId]) {
-                            // Bilinen import edilen beaver
-                            beaverType = importedBeaverTypeMap[beaverId];
-                        } else if (beaverId < 1000) {
-                            // Küçük ID'li beaver'lar (import edilmiş) → Statistical distribution
-                            // %50 Degen, %20 Pro, %30 Noob
-                            const hash = beaverId.toString().split('').reduce((a, b) => {
-                                a = ((a << 5) - a) + b.charCodeAt(0);
-                                return a & a;
-                            }, 0);
-                            const normalizedHash = Math.abs(hash) % 100;
+                        // Method 1: Try to get real type from contract (for working beavers)
+                        try {
+                            const realBeaverResult = await provider.callContract({
+                                contractAddress: GAME_CONTRACT_ADDRESS,
+                                entrypoint: 'get_beaver',
+                                calldata: [formattedAddress, beaverId.toString()]
+                            });
                             
-                            if (normalizedHash < 50) {
-                                beaverType = 2; // Degen (50%)
-                            } else if (normalizedHash < 70) {
-                                beaverType = 1; // Pro (20%)
-                            } else {
-                                beaverType = 0; // Noob (30%)
+                            if (realBeaverResult.result && realBeaverResult.result.length >= 5) {
+                                const rawType = realBeaverResult.result[1];
+                                beaverType = parseInt(rawType);
+                                console.log(`✅ Got real type from contract for beaver ${beaverId}: ${beaverType}`);
                             }
-                        } else {
-                            // Büyük ID'li beaver'lar (yeni) → Pro (varsayılan)
-                            beaverType = 1;
+                        } catch (contractError) {
+                            console.log(`⚠️ Could not get real type for beaver ${beaverId}, using fallback`);
+                            
+                            // Method 2: Use statistical distribution for imported beavers
+                            if (importedBeaverTypeMap[beaverId]) {
+                                // Bilinen import edilen beaver
+                                beaverType = importedBeaverTypeMap[beaverId];
+                            } else if (beaverId < 1000) {
+                                // Küçük ID'li beaver'lar (import edilmiş) → Statistical distribution
+                                // %50 Degen, %20 Pro, %30 Noob
+                                const hash = beaverId.toString().split('').reduce((a, b) => {
+                                    a = ((a << 5) - a) + b.charCodeAt(0);
+                                    return a & a;
+                                }, 0);
+                                const normalizedHash = Math.abs(hash) % 100;
+                                
+                                if (normalizedHash < 50) {
+                                    beaverType = 2; // Degen (50%)
+                                } else if (normalizedHash < 70) {
+                                    beaverType = 1; // Pro (20%)
+                                } else {
+                                    beaverType = 0; // Noob (30%)
+                                }
+                            } else {
+                                // Büyük ID'li beaver'lar (yeni) → Pro (varsayılan)
+                                beaverType = 1;
+                            }
                         }
                         const placeholderBeaver = {
                             id: Number(beaverId),
