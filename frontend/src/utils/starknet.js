@@ -825,36 +825,9 @@ export async function fetchPlayerInfo(address) {
             
             console.log('🔍 Processing beavers...');
             
-            for (const beaverId of allBeaverIds) {
-                // Her beaver için ownership test et
-                try {
-                    const testResult = await provider.callContract({
-                        contractAddress: GAME_CONTRACT_ADDRESS,
-                        entrypoint: 'get_beaver',
-                        calldata: [formattedAddress, beaverId.toString()]
-                    });
-                    
-                    if (testResult.result && testResult.result.length >= 5) {
-                        const rawOwner = testResult.result[4];
-                        const owner = '0x' + BigInt(rawOwner).toString(16);
-                        
-                        // Check if this beaver is really owned by the user
-                        if (owner.toLowerCase() === formattedAddress.toLowerCase()) {
-                            beaverIds.push(beaverId);
-                            console.log(`✅ Beaver ${beaverId} is really owned by user`);
-                        } else {
-                            console.log(`❌ Beaver ${beaverId} is not owned by user (owner: ${owner})`);
-                        }
-                    }
-                } catch (error) {
-                    // If we get "Not beaver owner" error, this beaver doesn't belong to the user
-                    if (error.message && error.message.includes('Not beaver owner')) {
-                        console.log(`❌ Beaver ${beaverId} is not owned by user (ownership error)`);
-                    } else {
-                        console.log(`❌ Beaver ${beaverId} failed ownership test:`, error.message);
-                    }
-                }
-            }
+            // Add all beaver IDs directly since get_user_beavers already returns user's beavers
+            beaverIds = allBeaverIds;
+            console.log(`✅ Added all ${allBeaverIds.length} beaver IDs from get_user_beavers`);
             
             console.log('🦫 Valid beaver IDs (really owned):', beaverIds);
         }
