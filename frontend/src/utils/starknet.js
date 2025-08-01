@@ -2,7 +2,7 @@
 /* global BigInt */
 import { connect, disconnect } from "starknetkit";
 import { Contract, CallData, cairo, RpcProvider } from "starknet";
-import { GAME_CONTRACT_ADDRESS, OLD_GAME_CONTRACT_ADDRESS, BURR_TOKEN_ADDRESS, STRK_ADDRESSES, CURRENT_NETWORK, NETWORKS } from './constants.js';
+import { GAME_CONTRACT_ADDRESS, BURR_TOKEN_ADDRESS, STRK_ADDRESSES, CURRENT_NETWORK, NETWORKS } from './constants.js';
 
 // Ensure BigInt is available
 if (typeof BigInt === 'undefined') {
@@ -781,7 +781,7 @@ export async function fetchPlayerInfo(address) {
                 
                 // Check if we got a valid result
                 if (beaverResult && beaverResult.result && beaverResult.result.length >= 5) {
-                    // Parse the result array - SIMPLE HEX PARSING
+                    // Parse the result array - BOTH HEX AND DECIMAL PARSING
                     const rawType = beaverResult.result[1];
                     const rawLevel = beaverResult.result[2];
                     const rawLastClaim = beaverResult.result[3];
@@ -792,75 +792,39 @@ export async function fetchPlayerInfo(address) {
                         rawLastClaim
                     });
                     
-                    // Parse hex values correctly
-                    beaverType = parseInt(rawType, 16);
-                    beaverLevel = parseInt(rawLevel, 16);
-                    lastClaimTime = parseInt(rawLastClaim, 16);
+                    // Try decimal parsing first (for imported beavers)
+                    let parsedType = parseInt(rawType);
+                    let parsedLevel = parseInt(rawLevel);
+                    let lastClaimTime = parseInt(rawLastClaim);
+                    
+                    // If decimal parsing fails, try hex parsing
+                    if (isNaN(parsedType)) {
+                        parsedType = parseInt(rawType, 16);
+                        parsedLevel = parseInt(rawLevel, 16);
+                        lastClaimTime = parseInt(rawLastClaim, 16);
+                        console.log(`🔍 Decimal parsing failed, using hex parsing for beaver ${beaverId}`);
+                    } else {
+                        console.log(`🔢 Using decimal parsing for beaver ${beaverId}`);
+                    }
+                    
+                    beaverType = parsedType;
+                    beaverLevel = parsedLevel;
                     
                     console.log(`✅ Parsed beaver ${beaverId}: Type=${beaverType}, Level=${beaverLevel}`);
-                    console.log(`🔍 Hex parsing: rawType="${rawType}" -> parseInt("${rawType}", 16) = ${beaverType}`);
+                    console.log(`📊 Parsing method: ${isNaN(parseInt(rawType)) ? 'Hex' : 'Decimal'}`);
                 } else {
                     console.log(`⚠️ Invalid beaver result for ${beaverId}, using defaults`);
                     console.log(`🔍 Result structure:`, beaverResult);
                 }
             } catch (error) {
-                console.log(`⚠️ Could not get details for beaver ${beaverId} from new contract, trying old contract. Error:`, error.message);
+                console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
                 
-                // Try old contract for imported beavers
-                try {
-                    console.log(`🔄 Trying old contract for beaver ${beaverId}`);
-                    const oldBeaverResult = await provider.callContract({
-                        contractAddress: OLD_GAME_CONTRACT_ADDRESS,
-                        entrypoint: 'get_beaver',
-                        calldata: [formattedAddress, beaverId.toString()]
-                    });
-                    
-                    console.log(`🔍 Old contract result for ${beaverId}:`, oldBeaverResult);
-                    
-                    if (oldBeaverResult && oldBeaverResult.result && oldBeaverResult.result.length >= 5) {
-                        const rawType = oldBeaverResult.result[1];
-                        const rawLevel = oldBeaverResult.result[2];
-                        const rawLastClaim = oldBeaverResult.result[3];
-                        
-                        // Eski kontrattan gelen veriler decimal formatında olabilir
-                        // Hem hex hem decimal parsing deneyelim
-                        let parsedType, parsedLevel, parsedLastClaim;
-                        
-                        // Önce decimal parsing dene
-                        parsedType = parseInt(rawType);
-                        parsedLevel = parseInt(rawLevel);
-                        parsedLastClaim = parseInt(rawLastClaim);
-                        
-                        // Eğer decimal parsing NaN verirse, hex parsing dene
-                        if (isNaN(parsedType)) {
-                            parsedType = parseInt(rawType, 16);
-                            parsedLevel = parseInt(rawLevel, 16);
-                            parsedLastClaim = parseInt(rawLastClaim, 16);
-                            console.log(`🔍 Decimal parsing failed, using hex parsing for beaver ${beaverId}`);
-                        } else {
-                            console.log(`🔢 Using decimal parsing for beaver ${beaverId}`);
-                        }
-                        
-                        beaverType = parsedType;
-                        beaverLevel = parsedLevel;
-                        lastClaimTime = parsedLastClaim;
-                        
-                        console.log(`✅ Found beaver ${beaverId} in old contract: Type=${beaverType}, Level=${beaverLevel}`);
-                        console.log(`🎯 Using old contract data for beaver ${beaverId}`);
-                        console.log(`📊 Raw values: Type=${rawType}, Level=${rawLevel}, LastClaim=${rawLastClaim}`);
-                    } else {
-                        console.log(`⚠️ No valid data in old contract for beaver ${beaverId}`);
-                    }
-                } catch (oldError) {
-                    console.log(`⚠️ Old contract also failed for beaver ${beaverId}:`, oldError.message);
-                    
-                    // Fallback to imported beaver detection
-                    if (isImportedBeaver(beaverId)) {
-                        console.log(`🔄 Imported beaver ${beaverId} detected`);
-                        beaverType = getImportedBeaverType(beaverId);
-                        beaverLevel = 1; // Default level for imported beavers
-                        console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
-                    }
+                // Fallback to imported beaver detection
+                if (isImportedBeaver(beaverId)) {
+                    console.log(`🔄 Imported beaver ${beaverId} detected`);
+                    beaverType = getImportedBeaverType(beaverId);
+                    beaverLevel = 1; // Default level for imported beavers
+                    console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
                 }
             }
             
