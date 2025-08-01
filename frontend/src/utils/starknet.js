@@ -907,35 +907,12 @@ export async function fetchPlayerInfo(address) {
                         pendingRewards: BigInt(0) // Will calculate proportionally below
                     };
                     
-                    // Debug ownership
-                    console.log(`🔍 Ownership check for beaver ${beaverId}:`);
-                    console.log(`  Contract owner: ${beaver.owner}`);
-                    console.log(`  Requested user: ${formattedAddress}`);
-                    console.log(`  Owner (lower): ${beaver.owner.toLowerCase()}`);
-                    console.log(`  User (lower): ${formattedAddress.toLowerCase()}`);
-                    
-                    // Normalize addresses for comparison (remove leading zeros)
-                    const normalizeAddress = (addr) => {
-                        if (!addr) return '';
-                        let normalized = addr.toLowerCase();
-                        if (normalized.startsWith('0x')) {
-                            normalized = '0x' + normalized.slice(2).replace(/^0+/, '');
-                        }
-                        return normalized;
-                    };
-                    
-                    const normalizedOwner = normalizeAddress(beaver.owner);
-                    const normalizedUser = normalizeAddress(formattedAddress);
-                    
-                    console.log(`  Normalized owner: ${normalizedOwner}`);
-                    console.log(`  Normalized user: ${normalizedUser}`);
-                    
-                    // Temporarily disable ownership check for debugging
-                    if (normalizedOwner !== normalizedUser) {
-                        console.warn(`⚠️ Ownership mismatch for beaver ${beaverId}: owner=${normalizedOwner}, requested=${normalizedUser}`);
-                        console.warn(`🔧 Temporarily allowing beaver ${beaverId} for debugging`);
-                        // continue; // Commented out for debugging
-                    }
+                    // Debug beaver info
+                    console.log(`🔍 Beaver ${beaverId} info:`);
+                    console.log(`  Type: ${beaver.type} (${beaver.type === 0 ? 'Noob' : beaver.type === 1 ? 'Pro' : 'Degen'})`);
+                    console.log(`  Level: ${beaver.level}`);
+                    console.log(`  Last Claim Time: ${beaver.last_claim_time}`);
+                    console.log(`  Owner: ${beaver.owner}`);
                     
                     // Use contract data directly - no overrides
                     console.log(`✅ Beaver ${beaverId} type from contract: ${beaver.type}`);
