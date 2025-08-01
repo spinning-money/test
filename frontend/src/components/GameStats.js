@@ -28,8 +28,8 @@ const GameStats = () => {
 
         fetchData();
         
-        // Refresh every 30 seconds
-        const interval = setInterval(fetchData, 30000);
+        // Refresh every hour (3600000 ms)
+        const interval = setInterval(fetchData, 3600000);
         return () => clearInterval(interval);
     }, []);
 
@@ -123,10 +123,7 @@ const GameStats = () => {
                 </div>
             </div>
 
-            <div className="stats-footer">
-                <p>🔄 Data refreshes every 30 seconds</p>
-                <p>📅 Last updated: {new Date().toLocaleTimeString()}</p>
-            </div>
+
         </div>
     );
 };
