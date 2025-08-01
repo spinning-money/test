@@ -2,7 +2,7 @@
 /* global BigInt */
 import { connect, disconnect } from "starknetkit";
 import { Contract, CallData, cairo, RpcProvider } from "starknet";
-import { GAME_CONTRACT_ADDRESS, BURR_TOKEN_ADDRESS, STRK_ADDRESSES, CURRENT_NETWORK, NETWORKS } from './constants.js';
+import { GAME_CONTRACT_ADDRESS, OLD_GAME_CONTRACT_ADDRESS, BURR_TOKEN_ADDRESS, STRK_ADDRESSES, CURRENT_NETWORK, NETWORKS } from './constants.js';
 
 // Ensure BigInt is available
 if (typeof BigInt === 'undefined') {
@@ -804,20 +804,41 @@ export async function fetchPlayerInfo(address) {
                     console.log(`🔍 Result structure:`, beaverResult);
                 }
             } catch (error) {
-                console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
-                console.log(`🔍 Full error:`, error);
+                console.log(`⚠️ Could not get details for beaver ${beaverId} from new contract, trying old contract. Error:`, error.message);
                 
-                // For imported beavers, try to extract info from error or use known data
-                if (error.message && error.message.includes('Not beaver owner')) {
-                    console.log(`🔄 This appears to be an imported beaver (${beaverId}), trying alternative approach`);
+                // Try old contract for imported beavers
+                try {
+                    console.log(`🔄 Trying old contract for beaver ${beaverId}`);
+                    const oldBeaverResult = await provider.callContract({
+                        contractAddress: OLD_GAME_CONTRACT_ADDRESS,
+                        entrypoint: 'get_beaver',
+                        calldata: [formattedAddress, beaverId.toString()]
+                    });
                     
-                    // For imported beavers, we know they are likely Degen (type 2) based on contract data
-                    // Check if this is a high ID beaver (imported ones have high IDs like 34953, 34960)
-                    if (beaverId > 10000) {
-                        console.log(`🔄 High ID beaver detected (${beaverId}), likely imported Degen`);
-                        beaverType = 2; // Degen
-                        beaverLevel = 1; // Default level
-                        console.log(`✅ Set imported beaver ${beaverId} to Type=2 (Degen), Level=1`);
+                    console.log(`🔍 Old contract result for ${beaverId}:`, oldBeaverResult);
+                    
+                    if (oldBeaverResult && oldBeaverResult.result && oldBeaverResult.result.length >= 5) {
+                        const rawType = oldBeaverResult.result[1];
+                        const rawLevel = oldBeaverResult.result[2];
+                        const rawLastClaim = oldBeaverResult.result[3];
+                        
+                        beaverType = parseInt(rawType, 16);
+                        beaverLevel = parseInt(rawLevel, 16);
+                        lastClaimTime = parseInt(rawLastClaim, 16);
+                        
+                        console.log(`✅ Found beaver ${beaverId} in old contract: Type=${beaverType}, Level=${beaverLevel}`);
+                    } else {
+                        console.log(`⚠️ No valid data in old contract for beaver ${beaverId}`);
+                    }
+                } catch (oldError) {
+                    console.log(`⚠️ Old contract also failed for beaver ${beaverId}:`, oldError.message);
+                    
+                    // Fallback to imported beaver detection
+                    if (isImportedBeaver(beaverId)) {
+                        console.log(`🔄 Imported beaver ${beaverId} detected`);
+                        beaverType = getImportedBeaverType(beaverId);
+                        beaverLevel = 1; // Default level for imported beavers
+                        console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
                     }
                 }
             }
