@@ -867,18 +867,36 @@ export async function fetchPlayerInfo(address) {
                     calldata: [formattedAddress, beaverId.toString()]
                 });
                 
+                console.log(`🔍 Raw beaver result for ${beaverId}:`, beaverResult);
+                
                 if (beaverResult.result && beaverResult.result.length >= 5) {
+                    const rawType = beaverResult.result[1];
+                    const rawLevel = beaverResult.result[2];
+                    const rawLastClaim = beaverResult.result[3];
+                    const rawOwner = beaverResult.result[4];
+                    
+                    console.log(`🔍 Raw values for beaver ${beaverId}:`, {
+                        rawType,
+                        rawLevel,
+                        rawLastClaim,
+                        rawOwner
+                    });
+                    
                     beaverDetails = {
                         id: beaverId,
-                        type: parseInt(beaverResult.result[1]) || 0,
-                        level: parseInt(beaverResult.result[2]) || 1,
-                        last_claim_time: parseInt(beaverResult.result[3]) || 0,
+                        type: parseInt(rawType) || 0,
+                        level: parseInt(rawLevel) || 1,
+                        last_claim_time: parseInt(rawLastClaim) || 0,
                         owner: formattedAddress
                     };
+                    
                     console.log(`✅ Got details for beaver ${beaverId}:`, beaverDetails);
+                    console.log(`📊 Type conversion: ${rawType} -> ${beaverDetails.type}`);
+                } else {
+                    console.log(`⚠️ Invalid beaver result for ${beaverId}:`, beaverResult);
                 }
             } catch (error) {
-                console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults`);
+                console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
             }
             
             // Create beaver object with details or defaults
@@ -892,8 +910,16 @@ export async function fetchPlayerInfo(address) {
             };
             
             // Calculate hourly rate based on type and level
+            // Contract types: 0=Noob, 1=Pro, 2=Degen
             const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen
             const baseRate = baseRates[beaver.type] || 300;
+            
+            console.log(`💰 Beaver ${beaverId} rate calculation:`, {
+                type: beaver.type,
+                level: beaver.level,
+                baseRate,
+                hourlyRate: beaver.hourlyRate
+            });
             
             const getContractLevelMultiplier = (level) => {
                 if (level === 1) return 1000;      // 1.0x
