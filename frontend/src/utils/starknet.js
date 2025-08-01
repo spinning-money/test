@@ -1818,3 +1818,51 @@ export async function emergencyUnpause() {
         throw error;
     }
 } 
+
+// Test function to check contract responses
+export async function testContractFunctions() {
+    try {
+        console.log('🧪 Testing contract functions...');
+        
+        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
+        
+        // Test each function individually
+        try {
+            const totalClaimed = await gameContract.get_total_claimed_burr();
+            console.log('✅ get_total_claimed_burr result:', totalClaimed);
+        } catch (error) {
+            console.log('❌ get_total_claimed_burr error:', error.message);
+        }
+        
+        try {
+            const activeUsers = await gameContract.get_active_users_count();
+            console.log('✅ get_active_users_count result:', activeUsers);
+        } catch (error) {
+            console.log('❌ get_active_users_count error:', error.message);
+        }
+        
+        try {
+            const balances = await gameContract.get_contract_balances();
+            console.log('✅ get_contract_balances result:', balances);
+        } catch (error) {
+            console.log('❌ get_contract_balances error:', error.message);
+        }
+        
+        try {
+            const stats = await gameContract.get_beaver_type_stats();
+            console.log('✅ get_beaver_type_stats result:', stats);
+        } catch (error) {
+            console.log('❌ get_beaver_type_stats error:', error.message);
+        }
+        
+        try {
+            const analytics = await gameContract.get_game_analytics();
+            console.log('✅ get_game_analytics result:', analytics);
+        } catch (error) {
+            console.log('❌ get_game_analytics error:', error.message);
+        }
+        
+    } catch (error) {
+        console.error('❌ Test function error:', error);
+    }
+} 

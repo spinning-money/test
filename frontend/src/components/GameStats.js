@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fetchAllGameData } from '../utils/starknet';
+import { fetchAllGameData, testContractFunctions } from '../utils/starknet';
 import './GameStats.css';
 
 const GameStats = () => {
@@ -11,6 +11,10 @@ const GameStats = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
+                
+                // Test contract functions first
+                await testContractFunctions();
+                
                 const data = await fetchAllGameData();
                 setGameData(data);
                 setError(null);
