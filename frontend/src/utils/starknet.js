@@ -171,7 +171,17 @@ const GAME_ABI = [
         "name": "get_game_analytics",
         "type": "function", 
         "inputs": [],
-        "outputs": [{"name": "analytics", "type": "felt*"}],
+        "outputs": [
+            {"name": "total_beavers_staked", "type": "felt"},
+            {"name": "total_burr_claimed", "type": "Uint256"},
+            {"name": "total_strk_collected", "type": "Uint256"},
+            {"name": "total_burr_burned", "type": "Uint256"},
+            {"name": "noob_count", "type": "felt"},
+            {"name": "pro_count", "type": "felt"},
+            {"name": "degen_count", "type": "felt"},
+            {"name": "active_users", "type": "felt"},
+            {"name": "total_upgrades", "type": "felt"}
+        ],
         "stateMutability": "view"
     },
     {
@@ -1574,50 +1584,27 @@ export async function fetchGameInfo() {
 // Fetch game analytics from contract
 export async function fetchGameAnalytics() {
     try {
-        const provider = getProvider();
-        
         console.log('📊 Fetching game analytics...');
         
-        console.log('📊 Fetching game analytics...');
+        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
+        const analytics = await gameContract.get_game_analytics();
         
-        const analyticsResult = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_game_analytics',
-            calldata: []
-        });
+        console.log('📊 Raw game analytics result:', analytics);
         
-        console.log('📊 Raw game analytics result:', analyticsResult);
+        const processedAnalytics = {
+            totalBeaversStaked: parseInt(analytics.total_beavers_staked),
+            totalBurrClaimed: safeBalanceConvert(analytics.total_burr_claimed),
+            totalStrkCollected: safeBalanceConvert(analytics.total_strk_collected),
+            totalBurrBurned: safeBalanceConvert(analytics.total_burr_burned),
+            noobCount: parseInt(analytics.noob_count),
+            proCount: parseInt(analytics.pro_count),
+            degenCount: parseInt(analytics.degen_count),
+            activeUsers: parseInt(analytics.active_users),
+            totalUpgrades: parseInt(analytics.total_upgrades)
+        };
         
-        if (analyticsResult.result && analyticsResult.result.length >= 9) {
-            const [
-                totalBeaversStaked,
-                totalBurrClaimed,
-                totalStrkCollected,
-                totalBurrBurned,
-                noobCount,
-                proCount,
-                degenCount,
-                activeUsers,
-                totalUpgrades
-            ] = analyticsResult.result;
-            
-            const analytics = {
-                totalBeaversStaked: parseInt(totalBeaversStaked),
-                totalBurrClaimed: BigInt(totalBurrClaimed),
-                totalStrkCollected: BigInt(totalStrkCollected),
-                totalBurrBurned: BigInt(totalBurrBurned),
-                noobCount: parseInt(noobCount),
-                proCount: parseInt(proCount),
-                degenCount: parseInt(degenCount),
-                activeUsers: parseInt(activeUsers),
-                totalUpgrades: parseInt(totalUpgrades)
-            };
-            
-            console.log('✅ Game analytics fetched:', analytics);
-            return analytics;
-        } else {
-            throw new Error('Invalid analytics result');
-        }
+        console.log('✅ Game analytics fetched:', processedAnalytics);
+        return processedAnalytics;
     } catch (error) {
         console.error('❌ Error fetching game analytics:', error);
         throw error;
