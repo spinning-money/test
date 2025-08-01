@@ -1616,9 +1616,14 @@ export async function fetchBeaverTypeStats() {
         console.log('📊 Fetching beaver type stats...');
         
         const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
-        const [noobCount, proCount, degenCount] = await gameContract.get_beaver_type_stats();
+        const statsResult = await gameContract.get_beaver_type_stats();
         
-        console.log('📊 Raw beaver type stats result:', { noobCount, proCount, degenCount });
+        console.log('📊 Raw beaver type stats result:', statsResult);
+        
+        // Handle tuple response - statsResult is an object with 0, 1, and 2 properties
+        const noobCount = statsResult[0] || statsResult.noob_count;
+        const proCount = statsResult[1] || statsResult.pro_count;
+        const degenCount = statsResult[2] || statsResult.degen_count;
         
         const stats = {
             noobCount: parseInt(noobCount),
@@ -1675,9 +1680,13 @@ export async function fetchContractBalances() {
         console.log('📊 Fetching contract balances...');
         
         const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
-        const [strkBalance, burrBalance] = await gameContract.get_contract_balances();
+        const balancesResult = await gameContract.get_contract_balances();
         
-        console.log('📊 Raw contract balances result:', { strkBalance, burrBalance });
+        console.log('📊 Raw contract balances result:', balancesResult);
+        
+        // Handle tuple response - balancesResult is an object with 0 and 1 properties
+        const strkBalance = balancesResult[0] || balancesResult.strk_balance;
+        const burrBalance = balancesResult[1] || balancesResult.burr_balance;
         
         const balances = {
             strkBalance: safeBalanceConvert(strkBalance),
