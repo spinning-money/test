@@ -802,84 +802,7 @@ export async function fetchBalances(address) {
     };
 }
 
-// Helper function to try different address formats for beaver ownership
-async function fetchBeaverWithAddressVariations(beaverId, userAddress, gameContract, provider) {
-    console.log(`🔄 Trying address format: ${userAddress} for beaver ${beaverId}`);
-    
-    // Try different address formats
-    const addressVariations = [
-        userAddress,
-        userAddress.toUpperCase(),
-        userAddress.toLowerCase(),
-        userAddress.replace(/^0x/, '0x0'),
-        userAddress.replace(/^0x0+/, '0x'),
-        userAddress.replace(/^0x/, ''),
-        `0x${userAddress.replace(/^0x/, '')}`,
-        userAddress.replace(/^0x0+/, '0x'),
-        userAddress.replace(/^0x/, '0x0000000000000000000000000000000000000000000000000000000000000000').slice(-66),
-        userAddress.replace(/^0x/, '0x0000000000000000000000000000000000000000000000000000000000000000').slice(-64),
-    ];
-    
-    for (const address of addressVariations) {
-        try {
-            const beaver = await gameContract.get_beaver(address, beaverId);
-            console.log(`✅ Successfully fetched beaver ${beaverId} with address format: ${address}`);
-            return beaver;
-        } catch (error) {
-            console.log(`❌ Failed with address: ${address} - ${error.message}`);
-        }
-    }
-    
-    // If all address variations fail, try direct contract call as fallback
-    console.log(`🔄 Trying direct contract call for beaver ${beaverId}`);
-    try {
-        const result = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_beaver',
-            calldata: [userAddress, beaverId.toString()]
-        });
-        
-        if (result.result && result.result.length >= 5) {
-            console.log(`✅ Direct contract call successful for beaver ${beaverId}`);
-            return {
-                id: beaverId,
-                type: parseInt(result.result[1]),
-                level: parseInt(result.result[2]),
-                last_claim_time: parseInt(result.result[3]),
-                owner: result.result[4]
-            };
-        }
-    } catch (error) {
-        console.log(`❌ Direct contract call also failed: ${error.message}`);
-    }
-    
-    // Final fallback: try to get beaver data without ownership check
-    console.log(`🔄 Trying to bypass ownership check for beaver ${beaverId}`);
-    try {
-        // Try to get beaver data using a different approach
-        const result = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_beaver',
-            calldata: [userAddress, beaverId.toString()]
-        });
-        
-        // If we get here, it means the call succeeded
-        if (result.result && result.result.length >= 5) {
-            console.log(`✅ Bypassed ownership check for beaver ${beaverId}`);
-            return {
-                id: beaverId,
-                type: parseInt(result.result[1]),
-                level: parseInt(result.result[2]),
-                last_claim_time: parseInt(result.result[3]),
-                owner: result.result[4]
-            };
-        }
-    } catch (error) {
-        console.log(`❌ Could not fetch beaver ${beaverId} with any address format`);
-    }
-    
-    return null;
-}
+
 
 // Fetch player info using multicall
 export async function fetchPlayerInfo(address) {
@@ -894,186 +817,84 @@ export async function fetchPlayerInfo(address) {
             formattedAddress = '0x' + address;
         }
         
-        // Manual contract call to test
-        const manualResult = await provider.callContract({
+        // Get user beavers list
+        const userBeaversResult = await provider.callContract({
             contractAddress: GAME_CONTRACT_ADDRESS,
             entrypoint: 'get_user_beavers',
             calldata: [formattedAddress]
         });
 
-        console.log('🔍 Raw get_user_beavers result:', manualResult);
+        console.log('🔍 Raw get_user_beavers result:', userBeaversResult);
 
-        // Use manual call result since Contract class parsing has issues with felt* arrays
+        // Parse beaver IDs
         let beaverIds = [];
-        if (Array.isArray(manualResult)) {
-            console.log('📊 Manual result array length:', manualResult.length);
-            
-            if (manualResult.length === 0) {
-                console.log('✅ User has no beavers');
-                return { beavers: [], totalRewards: '0' };
-            }
-            
-            // All elements are beaver IDs directly (no length prefix)
-            // Filter out duplicates and invalid IDs with more robust deduplication
-            const rawIds = manualResult.map(id => {
-                const numId = parseInt(id, 16);
-                console.log(`🔄 Converting ${id} -> ${numId}`);
-                return numId;
-            }).filter(id => id > 0);
-            
-            // Remove duplicates using Set and additional validation
+        if (Array.isArray(userBeaversResult) && userBeaversResult.length > 0) {
+            // Convert hex IDs to numbers and remove duplicates
             const uniqueIds = new Set();
-            const validIds = [];
-            
-            for (const id of rawIds) {
-                if (!uniqueIds.has(id) && id > 0 && id < 1000000) { // Reasonable range check
-                    uniqueIds.add(id);
-                    validIds.push(id);
-                } else {
-                    console.log(`🔄 Skipping invalid/duplicate beaver ID: ${id}`);
+            for (const id of userBeaversResult) {
+                const numId = parseInt(id, 16);
+                if (numId > 0 && numId < 1000000) { // Reasonable range check
+                    uniqueIds.add(numId);
                 }
             }
-            
-            beaverIds = validIds;
-            console.log('🦫 Raw beaver IDs (with duplicates):', rawIds);
-            console.log('🦫 Unique beaver IDs (after deduplication):', beaverIds);
+            beaverIds = Array.from(uniqueIds);
         }
         
         console.log('🦫 Parsed beaver IDs:', beaverIds);
         
-        if (!beaverIds || beaverIds.length === 0) {
-            console.log('✅ No valid beaver IDs found');
+        if (beaverIds.length === 0) {
+            console.log('✅ User has no beavers');
             return { beavers: [], totalRewards: '0' };
         }
         
-        // Get total pending rewards once for the user
+        // Get total pending rewards
         const totalPendingRewards = await gameContract.calculate_pending_rewards(formattedAddress);
         const totalPendingBigInt = safeBalanceConvert(totalPendingRewards);
         
-        // Fetch details for each beaver individually
+        // Create basic beaver objects for all beavers in the list
         const beavers = [];
         let totalHourlyRate = 0;
-        const processedBeaverIds = new Set(); // Track processed beaver IDs to avoid duplicates
-        let successfulBeavers = 0;
-        let failedBeavers = 0;
         
         for (const beaverId of beaverIds) {
-            // Skip if we already processed this beaver ID
-            if (processedBeaverIds.has(beaverId)) {
-                console.log(`🔄 Skipping duplicate beaver ID: ${beaverId}`);
-                continue;
-            }
-            processedBeaverIds.add(beaverId);
+            console.log(`🦫 Processing beaver ${beaverId}`);
             
-            console.log(`🦫 Fetching beaver ${beaverId} for user ${formattedAddress}`);
-            
-            // Use the new helper function to try different address formats
-            const beaver = await fetchBeaverWithAddressVariations(beaverId, formattedAddress, gameContract, provider);
-            
-            if (!beaver) {
-                console.log(`❌ Could not fetch beaver ${beaverId} - this might be an imported beaver with ownership issues`);
+            // Try to get beaver details, but don't fail if ownership check fails
+            let beaverDetails = null;
+            try {
+                const beaverResult = await provider.callContract({
+                    contractAddress: GAME_CONTRACT_ADDRESS,
+                    entrypoint: 'get_beaver',
+                    calldata: [formattedAddress, beaverId.toString()]
+                });
                 
-                // Since this beaver is in user_beavers list, we'll create a basic beaver object
-                // This handles imported beavers that have ownership issues
-                console.log(`🔄 Creating basic beaver info for beaver ${beaverId} (imported beaver)`);
-                
-                // Try to get basic info from contract without ownership check
-                try {
-                    const basicInfo = await provider.callContract({
-                        contractAddress: GAME_CONTRACT_ADDRESS,
-                        entrypoint: 'get_beaver',
-                        calldata: [formattedAddress, beaverId.toString()]
-                    });
-                    
-                    if (basicInfo.result && basicInfo.result.length >= 5) {
-                        const basicBeaver = {
-                            id: beaverId,
-                            type: parseInt(basicInfo.result[1]) || 0,
-                            level: parseInt(basicInfo.result[2]) || 1,
-                            last_claim_time: parseInt(basicInfo.result[3]) || 0,
-                            owner: formattedAddress,
-                            hourlyRate: 300 // Default rate for imported beavers
-                        };
-                        
-                        // Calculate hourly rate for this beaver
-                        const baseRates = [300, 300, 750, 2250];
-                        const baseRate = baseRates[basicBeaver.type] || 300;
-                        const getContractLevelMultiplier = (level) => {
-                            if (level === 1) return 1000;
-                            else if (level === 2) return 1500;
-                            else if (level === 3) return 2250;
-                            else if (level === 4) return 3375;
-                            else return 5062;
-                        };
-                        const levelMultiplier = getContractLevelMultiplier(basicBeaver.level) / 1000;
-                        basicBeaver.hourlyRate = baseRate * levelMultiplier;
-                        
-                        beavers.push(basicBeaver);
-                        successfulBeavers++;
-                        totalHourlyRate += basicBeaver.hourlyRate;
-                        console.log(`✅ Added imported beaver ${beaverId} with basic info (Type: ${basicBeaver.type}, Level: ${basicBeaver.level}, Rate: ${basicBeaver.hourlyRate})`);
-                        continue;
-                    }
-                } catch (error) {
-                    console.log(`⚠️ Could not get basic info for beaver ${beaverId}, creating default beaver`);
+                if (beaverResult.result && beaverResult.result.length >= 5) {
+                    beaverDetails = {
+                        id: beaverId,
+                        type: parseInt(beaverResult.result[1]) || 0,
+                        level: parseInt(beaverResult.result[2]) || 1,
+                        last_claim_time: parseInt(beaverResult.result[3]) || 0,
+                        owner: formattedAddress
+                    };
+                    console.log(`✅ Got details for beaver ${beaverId}:`, beaverDetails);
                 }
-                
-                // If we can't get any info, create a default beaver
-                const defaultBeaver = {
-                    id: beaverId,
-                    type: 0, // Default to Noob
-                    level: 1, // Default to level 1
-                    last_claim_time: 0,
-                    owner: formattedAddress,
-                    hourlyRate: 300
-                };
-                
-                beavers.push(defaultBeaver);
-                successfulBeavers++;
-                totalHourlyRate += 300;
-                console.log(`✅ Added default beaver ${beaverId} (imported beaver with no info)`);
-                continue;
+            } catch (error) {
+                console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults`);
             }
             
-            // Additional validation: check if beaver data is reasonable
-            if (beaver.type < 0 || beaver.type > 2) {
-                console.warn(`⚠️ Invalid beaver type for beaver ${beaverId}: ${beaver.type}`);
-                failedBeavers++;
-                continue;
-            }
+            // Create beaver object with details or defaults
+            const beaver = {
+                id: beaverId,
+                type: beaverDetails?.type || 0, // Default to Noob
+                level: beaverDetails?.level || 1, // Default to level 1
+                last_claim_time: beaverDetails?.last_claim_time || 0,
+                owner: formattedAddress,
+                hourlyRate: 300 // Default rate
+            };
             
-            if (beaver.level < 1 || beaver.level > 5) {
-                console.warn(`⚠️ Invalid beaver level for beaver ${beaverId}: ${beaver.level}`);
-                failedBeavers++;
-                continue;
-            }
-            
-            // For imported beavers, we might need to handle ownership differently
-            // If the beaver exists in user_beavers but get_beaver fails, 
-            // we can still show it with basic info
-            if (!beaver.owner || beaver.owner === '0x0') {
-                console.log(`⚠️ Beaver ${beaverId} has no owner info, but showing it anyway as it's in user_beavers`);
-                // Create a basic beaver object with default values
-                const basicBeaver = {
-                    id: beaverId,
-                    type: beaver.type || 0,
-                    level: beaver.level || 1,
-                    last_claim_time: beaver.last_claim_time || 0,
-                    owner: formattedAddress,
-                    hourlyRate: 300 // Default rate
-                };
-                beavers.push(basicBeaver);
-                successfulBeavers++;
-                totalHourlyRate += 300;
-                console.log(`✅ Added beaver ${beaverId} with basic info`);
-                continue;
-            }
-            
-            // Calculate hourly rate for this beaver (matching contract logic)
-            const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
+            // Calculate hourly rate based on type and level
+            const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen
             const baseRate = baseRates[beaver.type] || 300;
             
-            // Use exact contract level multipliers (divided by 1000)
             const getContractLevelMultiplier = (level) => {
                 if (level === 1) return 1000;      // 1.0x
                 else if (level === 2) return 1500; // 1.5x  
@@ -1083,31 +904,15 @@ export async function fetchPlayerInfo(address) {
             };
             
             const levelMultiplier = getContractLevelMultiplier(beaver.level) / 1000;
-            const hourlyRate = baseRate * levelMultiplier;
-            totalHourlyRate += hourlyRate;
-            
-            beaver.hourlyRate = hourlyRate;
+            beaver.hourlyRate = baseRate * levelMultiplier;
             
             beavers.push(beaver);
-            successfulBeavers++;
-            console.log(`✅ Successfully processed beaver ${beaverId} (Type: ${beaver.type}, Level: ${beaver.level}, Rate: ${hourlyRate})`);
+            totalHourlyRate += beaver.hourlyRate;
             
-            // If we successfully processed a beaver, try to get more info about it
-            // This helps with imported beavers that might have ownership issues
-            try {
-                const additionalInfo = await provider.callContract({
-                    contractAddress: GAME_CONTRACT_ADDRESS,
-                    entrypoint: 'get_beaver',
-                    calldata: [formattedAddress, beaverId.toString()]
-                });
-                console.log(`🔍 Additional info for beaver ${beaverId}:`, additionalInfo);
-            } catch (error) {
-                // This is expected for some beavers, so we don't log it as an error
-                console.log(`ℹ️ No additional info available for beaver ${beaverId}`);
-            }
+            console.log(`✅ Added beaver ${beaverId} (Type: ${beaver.type}, Level: ${beaver.level}, Rate: ${beaver.hourlyRate})`);
         }
         
-        // Distribute total pending rewards proportionally based on hourly rates
+        // Distribute total pending rewards proportionally
         for (const beaver of beavers) {
             if (totalHourlyRate > 0) {
                 const proportion = beaver.hourlyRate / totalHourlyRate;
@@ -1118,20 +923,16 @@ export async function fetchPlayerInfo(address) {
             }
         }
         
-        console.log(`📊 Final result: ${successfulBeavers} successful beavers, ${failedBeavers} failed beavers, total hourly rate: ${totalHourlyRate}`);
+        console.log(`📊 Final result: ${beavers.length} beavers, total hourly rate: ${totalHourlyRate}`);
         
-        // If we have some successful beavers, show them even if some failed
-        if (successfulBeavers > 0) {
-            console.log(`✅ Showing ${successfulBeavers} beavers to user (${failedBeavers} failed due to ownership issues)`);
-            return { beavers, totalRewards: formatBalance(totalPendingBigInt, 18) };
-        } else {
-            console.log(`❌ No beavers could be fetched successfully`);
-            return { beavers: [], totalRewards: formatBalance(totalPendingBigInt, 18) };
-        }
+        return { 
+            beavers, 
+            totalRewards: formatBalance(totalPendingBigInt, 18) 
+        };
         
     } catch (error) {
         console.log("💥 fetchPlayerInfo error:", error);
-        return { beavers: [], totalRewards: BigInt(0) };
+        return { beavers: [], totalRewards: '0' };
     }
 }
 
