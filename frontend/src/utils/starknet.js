@@ -972,7 +972,66 @@ export async function fetchPlayerInfo(address) {
             
             if (!beaver) {
                 console.log(`❌ Could not fetch beaver ${beaverId} - this might be an imported beaver with ownership issues`);
-                failedBeavers++;
+                
+                // Since this beaver is in user_beavers list, we'll create a basic beaver object
+                // This handles imported beavers that have ownership issues
+                console.log(`🔄 Creating basic beaver info for beaver ${beaverId} (imported beaver)`);
+                
+                // Try to get basic info from contract without ownership check
+                try {
+                    const basicInfo = await provider.callContract({
+                        contractAddress: GAME_CONTRACT_ADDRESS,
+                        entrypoint: 'get_beaver',
+                        calldata: [formattedAddress, beaverId.toString()]
+                    });
+                    
+                    if (basicInfo.result && basicInfo.result.length >= 5) {
+                        const basicBeaver = {
+                            id: beaverId,
+                            type: parseInt(basicInfo.result[1]) || 0,
+                            level: parseInt(basicInfo.result[2]) || 1,
+                            last_claim_time: parseInt(basicInfo.result[3]) || 0,
+                            owner: formattedAddress,
+                            hourlyRate: 300 // Default rate for imported beavers
+                        };
+                        
+                        // Calculate hourly rate for this beaver
+                        const baseRates = [300, 300, 750, 2250];
+                        const baseRate = baseRates[basicBeaver.type] || 300;
+                        const getContractLevelMultiplier = (level) => {
+                            if (level === 1) return 1000;
+                            else if (level === 2) return 1500;
+                            else if (level === 3) return 2250;
+                            else if (level === 4) return 3375;
+                            else return 5062;
+                        };
+                        const levelMultiplier = getContractLevelMultiplier(basicBeaver.level) / 1000;
+                        basicBeaver.hourlyRate = baseRate * levelMultiplier;
+                        
+                        beavers.push(basicBeaver);
+                        successfulBeavers++;
+                        totalHourlyRate += basicBeaver.hourlyRate;
+                        console.log(`✅ Added imported beaver ${beaverId} with basic info (Type: ${basicBeaver.type}, Level: ${basicBeaver.level}, Rate: ${basicBeaver.hourlyRate})`);
+                        continue;
+                    }
+                } catch (error) {
+                    console.log(`⚠️ Could not get basic info for beaver ${beaverId}, creating default beaver`);
+                }
+                
+                // If we can't get any info, create a default beaver
+                const defaultBeaver = {
+                    id: beaverId,
+                    type: 0, // Default to Noob
+                    level: 1, // Default to level 1
+                    last_claim_time: 0,
+                    owner: formattedAddress,
+                    hourlyRate: 300
+                };
+                
+                beavers.push(defaultBeaver);
+                successfulBeavers++;
+                totalHourlyRate += 300;
+                console.log(`✅ Added default beaver ${beaverId} (imported beaver with no info)`);
                 continue;
             }
             
