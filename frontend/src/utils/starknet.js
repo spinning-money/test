@@ -723,26 +723,42 @@ export async function fetchPlayerInfo(address) {
         const beavers = [];
         let totalHourlyRate = 0;
         
-        // Import beaver detection logic
+        // Import beaver detection logic - based on known imported beavers
         const isImportedBeaver = (beaverId) => {
-            // Import edilen beaver'lar genellikle yüksek ID'lere sahip
-            // veya belirli aralıklarda olabilir
-            return beaverId > 1000 || beaverId === 40 || beaverId === 35 || beaverId === 37 || beaverId === 41 || beaverId === 43 || beaverId === 45;
+            // Known imported beaver IDs from old contract
+            const importedBeaverIds = [
+                40, 35, 37, 41, 43, 45, // Specific imported beavers
+                34953, 34960, // High ID imported beavers
+                6, 8, 9, 10, 14, 16, 17, 20, 30, 32 // Other imported beavers
+            ];
+            return importedBeaverIds.includes(beaverId);
         };
         
         const getImportedBeaverType = (beaverId) => {
-            // ID aralığına göre type belirleme
-            if (beaverId >= 34950 && beaverId <= 34960) {
-                return 2; // Degen (yüksek ID'li import'lar)
-            }
-            if (beaverId >= 1000 && beaverId <= 2000) {
-                return 1; // Pro (orta ID'li import'lar)
-            }
-            if (beaverId >= 2000 && beaverId <= 10000) {
-                return 2; // Degen (yüksek ID'li import'lar)
-            }
-            // Varsayılan olarak Degen
-            return 2; // Degen
+            // Based on old contract data, most imported beavers are Degen (type 2)
+            // Specific mapping for known beavers
+            const beaverTypeMap = {
+                40: 2,   // Degen
+                35: 2,   // Degen
+                37: 2,   // Degen
+                41: 2,   // Degen
+                43: 2,   // Degen
+                45: 2,   // Degen
+                34953: 2, // Degen
+                34960: 2, // Degen
+                6: 2,    // Degen
+                8: 2,    // Degen
+                9: 2,    // Degen
+                10: 2,   // Degen
+                14: 2,   // Degen
+                16: 2,   // Degen
+                17: 2,   // Degen
+                20: 2,   // Degen
+                30: 2,   // Degen
+                32: 2    // Degen
+            };
+            
+            return beaverTypeMap[beaverId] || 2; // Default to Degen for imported beavers
         };
         
         for (const beaverId of beaverIds) {
