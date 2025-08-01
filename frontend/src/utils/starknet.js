@@ -891,8 +891,10 @@ export async function fetchPlayerInfo(address) {
                     lastClaimTime = parseInt(rawLastClaim, 16);
                     
                     console.log(`✅ Parsed beaver ${beaverId}: Type=${beaverType}, Level=${beaverLevel}`);
+                    console.log(`🔍 Hex parsing debug: rawType="${rawType}" -> parseInt("${rawType}", 16) = ${beaverType}`);
                 } else {
                     console.log(`⚠️ Invalid beaver result for ${beaverId}, using defaults`);
+                    console.log(`🔍 Result structure:`, beaverResult);
                 }
             } catch (error) {
                 console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
