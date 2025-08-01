@@ -890,8 +890,10 @@ export async function fetchPlayerInfo(address) {
                     if (!beaverResult) {
                         console.log(`🔧 Creating placeholder data for beaver ${beaverId} since it's in user's beaver list`);
                         
-                        // Import edilen beaver'lar için doğru type mapping
+                        // Import edilen beaver'lar için pattern-based type detection
+                        // Bulk import script'inde tüm beaver'lar Degen (type 2) olarak import edildi
                         const importedBeaverTypeMap = {
+                            // Bilinen import edilen beaver'lar
                             6: 2,   // Degen
                             8: 2,   // Degen
                             9: 2,   // Degen
@@ -911,8 +913,20 @@ export async function fetchPlayerInfo(address) {
                             45: 2   // Degen
                         };
                         
-                        // Create placeholder beaver with correct type
-                        const beaverType = importedBeaverTypeMap[beaverId] || 2; // Default to Degen
+                        // Pattern-based detection: Eğer beaver ID küçükse (import edilmiş) → Degen
+                        // Eğer beaver ID büyükse (yeni) → Gerçek type'ı kullan
+                        let beaverType = 2; // Default to Degen
+                        
+                        if (importedBeaverTypeMap[beaverId]) {
+                            // Bilinen import edilen beaver
+                            beaverType = importedBeaverTypeMap[beaverId];
+                        } else if (beaverId < 1000) {
+                            // Küçük ID'li beaver'lar (import edilmiş) → Degen
+                            beaverType = 2;
+                        } else {
+                            // Büyük ID'li beaver'lar (yeni) → Pro (varsayılan)
+                            beaverType = 1;
+                        }
                         const placeholderBeaver = {
                             id: Number(beaverId),
                             owner: formattedAddress,
