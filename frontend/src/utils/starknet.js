@@ -913,6 +913,64 @@ export async function fetchPlayerInfo(address) {
                     console.log(`✅ Successfully fetched beaver ${beaverId}`);
                 } else {
                     console.log(`❌ Invalid beaver result for ${beaverId}:`, beaverResult);
+                    // Try to parse the result even if it's not in expected format
+                    if (beaverResult && Array.isArray(beaverResult) && beaverResult.length >= 5) {
+                        console.log(`🔧 Trying to parse beaver ${beaverId} result manually:`, beaverResult);
+                        
+                        try {
+                            const rawId = beaverResult[0];
+                            const rawType = beaverResult[1];
+                            const rawLevel = beaverResult[2];
+                            const rawLastClaim = beaverResult[3];
+                            const rawOwner = beaverResult[4];
+                            
+                            // Parse values
+                            const beaverType = parseInt(rawType);
+                            const beaverLevel = parseInt(rawLevel);
+                            const lastClaimTime = parseInt(rawLastClaim);
+                            const owner = '0x' + BigInt(rawOwner).toString(16);
+                            
+                            const beaver = {
+                                id: Number(beaverId),
+                                owner: owner,
+                                type: beaverType,
+                                level: beaverLevel,
+                                last_claim_time: lastClaimTime,
+                                pendingRewards: BigInt(0) // Will calculate proportionally below
+                            };
+                            
+                            // Debug beaver info
+                            console.log(`🔍 Beaver ${beaverId} info (manual parse):`);
+                            console.log(`  Type: ${beaver.type} (${beaver.type === 0 ? 'Noob' : beaver.type === 1 ? 'Pro' : 'Degen'})`);
+                            console.log(`  Level: ${beaver.level}`);
+                            console.log(`  Last Claim Time: ${beaver.last_claim_time}`);
+                            console.log(`  Owner: ${beaver.owner}`);
+                            
+                            // Calculate hourly rate for this beaver (matching contract logic)
+                            const baseRates = [300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
+                            const baseRate = baseRates[beaver.type] || 300;
+                            
+                            // Use exact contract level multipliers (divided by 1000)
+                            const getContractLevelMultiplier = (level) => {
+                                if (level === 1) return 1000;      // 1.0x
+                                else if (level === 2) return 1500; // 1.5x  
+                                else if (level === 3) return 2250; // 2.25x
+                                else if (level === 4) return 3375; // 3.375x
+                                else return 5062;                  // 5.0625x (level 5)
+                            };
+                            
+                            const levelMultiplier = getContractLevelMultiplier(beaver.level) / 1000;
+                            const hourlyRate = baseRate * levelMultiplier;
+                            totalHourlyRate += hourlyRate;
+                            
+                            beaver.hourlyRate = hourlyRate;
+                            
+                            beavers.push(beaver);
+                            console.log(`✅ Successfully fetched beaver ${beaverId} (manual parse)`);
+                        } catch (parseError) {
+                            console.log(`❌ Failed to parse beaver ${beaverId} manually:`, parseError);
+                        }
+                    }
                 }
                 
                          } catch (error) {
