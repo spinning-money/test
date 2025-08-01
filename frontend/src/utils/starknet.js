@@ -1586,6 +1586,8 @@ export async function fetchGameAnalytics() {
             calldata: []
         });
         
+        console.log('📊 Raw game analytics result:', analyticsResult);
+        
         if (analyticsResult.result && analyticsResult.result.length >= 9) {
             const [
                 totalBeaversStaked,
@@ -1636,6 +1638,8 @@ export async function fetchBeaverTypeStats() {
             calldata: []
         });
         
+        console.log('📊 Raw beaver type stats result:', statsResult);
+        
         if (statsResult.result && statsResult.result.length >= 3) {
             const [noobCount, proCount, degenCount] = statsResult.result;
             
@@ -1670,6 +1674,8 @@ export async function fetchTotalClaimedBurr() {
             calldata: []
         });
         
+        console.log('📊 Raw total claimed result:', result);
+        
         if (result.result && result.result.length >= 1) {
             const totalClaimed = BigInt(result.result[0]);
             console.log('✅ Total claimed BURR fetched:', totalClaimed.toString());
@@ -1697,6 +1703,8 @@ export async function fetchActiveUsersCount() {
             calldata: []
         });
         
+        console.log('📊 Raw active users result:', result);
+        
         if (result.result && result.result.length >= 1) {
             const activeUsers = parseInt(result.result[0]);
             console.log('✅ Active users count fetched:', activeUsers);
@@ -1723,6 +1731,8 @@ export async function fetchContractBalances() {
             entrypoint: 'get_contract_balances',
             calldata: []
         });
+        
+        console.log('📊 Raw contract balances result:', result);
         
         if (result.result && result.result.length >= 2) {
             const [strkBalance, burrBalance] = result.result;
