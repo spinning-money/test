@@ -170,6 +170,41 @@ const GAME_ABI = [
         "stateMutability": "view"
     },
     {
+        "name": "get_beaver_type_stats",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+            {"name": "noob_count", "type": "felt"},
+            {"name": "pro_count", "type": "felt"},
+            {"name": "degen_count", "type": "felt"}
+        ],
+        "stateMutability": "view"
+    },
+    {
+        "name": "get_total_claimed_burr",
+        "type": "function",
+        "inputs": [],
+        "outputs": [{"name": "total_claimed", "type": "Uint256"}],
+        "stateMutability": "view"
+    },
+    {
+        "name": "get_active_users_count",
+        "type": "function",
+        "inputs": [],
+        "outputs": [{"name": "active_users", "type": "felt"}],
+        "stateMutability": "view"
+    },
+    {
+        "name": "get_contract_balances",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+            {"name": "burr_balance", "type": "Uint256"},
+            {"name": "strk_balance", "type": "Uint256"}
+        ],
+        "stateMutability": "view"
+    },
+    {
         "name": "emergency_pause",
         "type": "function",
         "inputs": [],
