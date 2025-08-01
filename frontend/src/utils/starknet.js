@@ -1626,34 +1626,21 @@ export async function fetchGameAnalytics() {
 
 export async function fetchBeaverTypeStats() {
     try {
-        const provider = getProvider();
-        
         console.log('📊 Fetching beaver type stats...');
         
-        console.log('📊 Fetching beaver type stats...');
+        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
+        const [noobCount, proCount, degenCount] = await gameContract.get_beaver_type_stats();
         
-        const statsResult = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_beaver_type_stats',
-            calldata: []
-        });
+        console.log('📊 Raw beaver type stats result:', { noobCount, proCount, degenCount });
         
-        console.log('📊 Raw beaver type stats result:', statsResult);
+        const stats = {
+            noobCount: parseInt(noobCount),
+            proCount: parseInt(proCount),
+            degenCount: parseInt(degenCount)
+        };
         
-        if (statsResult.result && statsResult.result.length >= 3) {
-            const [noobCount, proCount, degenCount] = statsResult.result;
-            
-            const stats = {
-                noobCount: parseInt(noobCount),
-                proCount: parseInt(proCount),
-                degenCount: parseInt(degenCount)
-            };
-            
-            console.log('✅ Beaver type stats fetched:', stats);
-            return stats;
-        } else {
-            throw new Error('Invalid stats result');
-        }
+        console.log('✅ Beaver type stats fetched:', stats);
+        return stats;
     } catch (error) {
         console.error('❌ Error fetching beaver type stats:', error);
         throw error;
@@ -1662,27 +1649,16 @@ export async function fetchBeaverTypeStats() {
 
 export async function fetchTotalClaimedBurr() {
     try {
-        const provider = getProvider();
-        
         console.log('📊 Fetching total claimed BURR...');
         
-        console.log('📊 Fetching total claimed BURR...');
+        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
+        const totalClaimed = await gameContract.get_total_claimed_burr();
         
-        const result = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_total_claimed_burr',
-            calldata: []
-        });
+        console.log('📊 Raw total claimed result:', totalClaimed);
         
-        console.log('📊 Raw total claimed result:', result);
-        
-        if (result.result && result.result.length >= 1) {
-            const totalClaimed = BigInt(result.result[0]);
-            console.log('✅ Total claimed BURR fetched:', totalClaimed.toString());
-            return totalClaimed;
-        } else {
-            throw new Error('Invalid total claimed result');
-        }
+        const totalClaimedBigInt = safeBalanceConvert(totalClaimed);
+        console.log('✅ Total claimed BURR fetched:', totalClaimedBigInt.toString());
+        return totalClaimedBigInt;
     } catch (error) {
         console.error('❌ Error fetching total claimed BURR:', error);
         throw error;
@@ -1691,27 +1667,16 @@ export async function fetchTotalClaimedBurr() {
 
 export async function fetchActiveUsersCount() {
     try {
-        const provider = getProvider();
-        
         console.log('📊 Fetching active users count...');
         
-        console.log('📊 Fetching active users count...');
+        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
+        const activeUsers = await gameContract.get_active_users_count();
         
-        const result = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_active_users_count',
-            calldata: []
-        });
+        console.log('📊 Raw active users result:', activeUsers);
         
-        console.log('📊 Raw active users result:', result);
-        
-        if (result.result && result.result.length >= 1) {
-            const activeUsers = parseInt(result.result[0]);
-            console.log('✅ Active users count fetched:', activeUsers);
-            return activeUsers;
-        } else {
-            throw new Error('Invalid active users result');
-        }
+        const activeUsersNumber = parseInt(activeUsers);
+        console.log('✅ Active users count fetched:', activeUsersNumber);
+        return activeUsersNumber;
     } catch (error) {
         console.error('❌ Error fetching active users count:', error);
         throw error;
@@ -1720,33 +1685,20 @@ export async function fetchActiveUsersCount() {
 
 export async function fetchContractBalances() {
     try {
-        const provider = getProvider();
-        
         console.log('📊 Fetching contract balances...');
         
-        console.log('📊 Fetching contract balances...');
+        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
+        const [strkBalance, burrBalance] = await gameContract.get_contract_balances();
         
-        const result = await provider.callContract({
-            contractAddress: GAME_CONTRACT_ADDRESS,
-            entrypoint: 'get_contract_balances',
-            calldata: []
-        });
+        console.log('📊 Raw contract balances result:', { strkBalance, burrBalance });
         
-        console.log('📊 Raw contract balances result:', result);
+        const balances = {
+            strkBalance: safeBalanceConvert(strkBalance),
+            burrBalance: safeBalanceConvert(burrBalance)
+        };
         
-        if (result.result && result.result.length >= 2) {
-            const [strkBalance, burrBalance] = result.result;
-            
-            const balances = {
-                strkBalance: BigInt(strkBalance),
-                burrBalance: BigInt(burrBalance)
-            };
-            
-            console.log('✅ Contract balances fetched:', balances);
-            return balances;
-        } else {
-            throw new Error('Invalid contract balances result');
-        }
+        console.log('✅ Contract balances fetched:', balances);
+        return balances;
     } catch (error) {
         console.error('❌ Error fetching contract balances:', error);
         throw error;
