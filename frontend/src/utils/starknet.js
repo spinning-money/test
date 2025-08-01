@@ -1590,17 +1590,20 @@ export async function fetchGameAnalytics() {
         const analytics = await gameContract.get_game_analytics();
         
         console.log('📊 Raw game analytics result:', analytics);
+        console.log('📊 Analytics keys:', Object.keys(analytics));
+        console.log('📊 Analytics values:', Object.values(analytics));
         
+        // Handle struct response - analytics is an object with struct properties
         const processedAnalytics = {
-            totalBeaversStaked: parseInt(analytics.total_beavers_staked),
-            totalBurrClaimed: safeBalanceConvert(analytics.total_burr_claimed),
-            totalStrkCollected: safeBalanceConvert(analytics.total_strk_collected),
-            totalBurrBurned: safeBalanceConvert(analytics.total_burr_burned),
-            noobCount: parseInt(analytics.noob_count),
-            proCount: parseInt(analytics.pro_count),
-            degenCount: parseInt(analytics.degen_count),
-            activeUsers: parseInt(analytics.active_users),
-            totalUpgrades: parseInt(analytics.total_upgrades)
+            totalBeaversStaked: parseInt(analytics.total_beavers_staked || analytics[0] || 0),
+            totalBurrClaimed: safeBalanceConvert(analytics.total_burr_claimed || analytics[1] || 0),
+            totalStrkCollected: safeBalanceConvert(analytics.total_strk_collected || analytics[2] || 0),
+            totalBurrBurned: safeBalanceConvert(analytics.total_burr_burned || analytics[3] || 0),
+            noobCount: parseInt(analytics.noob_count || analytics[4] || 0),
+            proCount: parseInt(analytics.pro_count || analytics[5] || 0),
+            degenCount: parseInt(analytics.degen_count || analytics[6] || 0),
+            activeUsers: parseInt(analytics.active_users || analytics[7] || 0),
+            totalUpgrades: parseInt(analytics.total_upgrades || analytics[8] || 0)
         };
         
         console.log('✅ Game analytics fetched:', processedAnalytics);
@@ -1708,26 +1711,17 @@ export async function fetchAllGameData() {
         const [
             gameAnalytics,
             beaverTypeStats,
-            totalClaimedBurr,
-            activeUsersCount,
-            contractBalances,
-            gameInfo
+            activeUsersCount
         ] = await Promise.all([
             fetchGameAnalytics(),
             fetchBeaverTypeStats(),
-            fetchTotalClaimedBurr(),
-            fetchActiveUsersCount(),
-            fetchContractBalances(),
-            fetchGameInfo()
+            fetchActiveUsersCount()
         ]);
         
         const allData = {
             analytics: gameAnalytics,
             typeStats: beaverTypeStats,
-            totalClaimedBurr,
-            activeUsersCount,
-            contractBalances,
-            gameInfo
+            activeUsersCount
         };
         
         console.log('✅ All game data fetched:', allData);
