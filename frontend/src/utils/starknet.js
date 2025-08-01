@@ -823,20 +823,10 @@ export async function fetchPlayerInfo(address) {
             
             console.log('🦫 All beaver IDs from contract:', allBeaverIds);
             
-            // Import edilen beaver'ları tanımla
-            const importedBeaverIds = [6, 8, 9, 10, 14, 16, 17, 18, 19, 30, 32, 35, 37, 40, 41, 43, 45];
-            
-            console.log('🔍 Processing beavers (including imported ones)...');
+            console.log('🔍 Processing beavers...');
             
             for (const beaverId of allBeaverIds) {
-                // Import edilen beaver'lar için özel işlem
-                if (importedBeaverIds.includes(beaverId)) {
-                    console.log(`🔄 Beaver ${beaverId} is imported - using default values`);
-                    beaverIds.push(beaverId);
-                    continue;
-                }
-                
-                // Normal beaver'lar için ownership test et
+                // Her beaver için ownership test et
                 try {
                     const testResult = await provider.callContract({
                         contractAddress: GAME_CONTRACT_ADDRESS,
@@ -857,7 +847,12 @@ export async function fetchPlayerInfo(address) {
                         }
                     }
                 } catch (error) {
-                    console.log(`❌ Beaver ${beaverId} failed ownership test:`, error.message);
+                    // If we get "Not beaver owner" error, this beaver doesn't belong to the user
+                    if (error.message && error.message.includes('Not beaver owner')) {
+                        console.log(`❌ Beaver ${beaverId} is not owned by user (ownership error)`);
+                    } else {
+                        console.log(`❌ Beaver ${beaverId} failed ownership test:`, error.message);
+                    }
                 }
             }
             
