@@ -727,6 +727,12 @@ export async function fetchPlayerInfo(address) {
         const importedBeavers = {
             34953: { type: 2, level: 1 }, // Degen
             34960: { type: 2, level: 1 }, // Degen
+            40: { type: 2, level: 1 },    // Degen (real type, not contract data)
+            35: { type: 2, level: 1 },    // Degen
+            37: { type: 2, level: 1 },    // Degen
+            41: { type: 2, level: 1 },    // Degen
+            43: { type: 2, level: 1 },    // Degen
+            45: { type: 2, level: 1 },    // Degen
             // Add more imported beavers here as needed
         };
         
