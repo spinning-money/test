@@ -915,23 +915,9 @@ export async function fetchPlayerInfo(address) {
                     console.error(`❌ Error fetching beaver ${beaverId}:`, error);
                     if (error.message && error.message.includes('Not beaver owner')) {
                         console.warn(`⚠️ Beaver ${beaverId} does not belong to user ${formattedAddress}`);
-                        console.warn(`🔧 This might be an old beaver that needs migration. Consider using import_beaver.`);
-                        
-                        // Create a placeholder beaver with default values (no overrides)
-                        const placeholderBeaver = {
-                            id: Number(beaverId),
-                            owner: formattedAddress,
-                            type: 0, // Default to Noob
-                            level: 1, // Default level
-                            last_claim_time: 0,
-                            pendingRewards: BigInt(0),
-                            hourlyRate: 300, // Default Noob rate
-                            isLegacy: true, // Mark as legacy/needs migration
-                            error: 'Migration required'
-                        };
-                        
-                        beavers.push(placeholderBeaver);
-                        console.log(`⚠️ Added placeholder for legacy beaver ${beaverId}`);
+                        console.warn(`🔧 Skipping this beaver as it's not owned by the user`);
+                        // Don't add placeholder - skip this beaver entirely
+                        continue;
                     }
                     // Continue with next beaver instead of breaking
                     continue;
