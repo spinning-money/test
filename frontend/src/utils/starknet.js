@@ -928,7 +928,7 @@ export async function fetchPlayerInfo(address) {
                 console.log(`✅ Beaver ${beaverId} type from contract: ${beaver.type}`);
                 
                 // Calculate hourly rate for this beaver (matching contract logic)
-                const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
+                const baseRates = [300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
                 const baseRate = baseRates[beaver.type] || 300;
                 
                 // Use exact contract level multipliers (divided by 1000)
