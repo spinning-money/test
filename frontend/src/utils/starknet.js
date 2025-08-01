@@ -890,11 +890,33 @@ export async function fetchPlayerInfo(address) {
                     if (!beaverResult) {
                         console.log(`🔧 Creating placeholder data for beaver ${beaverId} since it's in user's beaver list`);
                         
-                        // Create placeholder beaver with default values
+                        // Import edilen beaver'lar için doğru type mapping
+                        const importedBeaverTypeMap = {
+                            6: 2,   // Degen
+                            8: 2,   // Degen
+                            9: 2,   // Degen
+                            10: 2,  // Degen
+                            14: 2,  // Degen
+                            16: 2,  // Degen
+                            17: 2,  // Degen
+                            18: 2,  // Degen
+                            19: 2,  // Degen
+                            30: 2,  // Degen
+                            32: 2,  // Degen
+                            35: 2,  // Degen
+                            37: 2,  // Degen
+                            40: 2,  // Degen
+                            41: 2,  // Degen
+                            43: 2,  // Degen
+                            45: 2   // Degen
+                        };
+                        
+                        // Create placeholder beaver with correct type
+                        const beaverType = importedBeaverTypeMap[beaverId] || 2; // Default to Degen
                         const placeholderBeaver = {
                             id: Number(beaverId),
                             owner: formattedAddress,
-                            type: 1, // Default to Pro (most common)
+                            type: beaverType, // Use correct type from mapping
                             level: 1, // Default to level 1
                             last_claim_time: Math.floor(Date.now() / 1000), // Current time
                             pendingRewards: BigInt(0)
