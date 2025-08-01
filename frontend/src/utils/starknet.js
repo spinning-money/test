@@ -23,6 +23,11 @@ const provider = new RpcProvider({
     nodeUrl: getCurrentRpcUrl()
 });
 
+// Get provider function
+const getProvider = () => {
+    return provider;
+};
+
 // ABI definitions
 const ERC20_ABI = [
     {
