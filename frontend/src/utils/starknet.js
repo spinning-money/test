@@ -886,69 +886,8 @@ export async function fetchPlayerInfo(address) {
                     continue;
                 }
                 
-                // Import beaver detection logic - based on known imported beavers
-                const isImportedBeaver = (beaverId) => {
-                    // Known imported beaver IDs from old contract
-                    const importedBeaverIds = [
-                        40, 35, 37, 41, 43, 45, // Specific imported beavers
-                        34953, 34960, // High ID imported beavers
-                        6, 8, 9, 10, 14, 16, 17, 20, 30, 32 // Other imported beavers
-                    ];
-                    return importedBeaverIds.includes(beaverId);
-                };
-                
-                const getImportedBeaverType = (beaverId) => {
-                    // Based on old contract data and user feedback, most imported beavers should be Degen (2)
-                    // This is a comprehensive override system for all imported beavers
-                    
-                    // Specific known beavers (from old contract data)
-                    const specificBeaverMap = {
-                        40: 2,   // Degen (was imported as Noob)
-                        35: 2,   // Degen (was imported as Noob)
-                        37: 2,   // Degen (was imported as Noob)
-                        41: 2,   // Degen (was imported as Noob)
-                        43: 2,   // Degen (was imported as Noob)
-                        45: 2,   // Degen (was imported as Noob)
-                        34953: 2, // Degen (was imported as Noob)
-                        34960: 2, // Degen (was imported as Noob)
-                        6: 2,    // Degen (was imported as Noob)
-                        8: 2,    // Degen (was imported as Noob)
-                        9: 2,    // Degen (was imported as Noob)
-                        10: 2,   // Degen (was imported as Noob)
-                        14: 2,   // Degen (was imported as Noob)
-                        16: 2,   // Degen (was imported as Noob)
-                        17: 2,   // Degen (was imported as Noob)
-                        20: 2,   // Degen (was imported as Noob)
-                        30: 2,   // Degen (was imported as Noob)
-                        32: 2    // Degen (was imported as Noob)
-                    };
-                    
-                    // Check specific mapping first
-                    if (specificBeaverMap[beaverId]) {
-                        return specificBeaverMap[beaverId];
-                    }
-                    
-                    // For all other imported beavers, use intelligent defaults
-                    // Based on old contract data, most imported beavers are Degen
-                    if (beaverId > 1000) {
-                        return 2; // High ID beavers are likely Degen
-                    }
-                    
-                    // For medium range IDs (likely imported from old contract)
-                    if (beaverId >= 6 && beaverId <= 50) {
-                        return 2; // Most imported beavers in this range are Degen
-                    }
-                    
-                    // Default to Noob for unknown beavers
-                    return 0;
-                };
-                
-                // Apply override for imported beavers
-                if (isImportedBeaver(beaverId)) {
-                    console.log(`🔄 Imported beaver ${beaverId} detected, applying override`);
-                    beaver.type = getImportedBeaverType(beaverId);
-                    console.log(`✅ Set imported beaver ${beaverId} to Type=${beaver.type}`);
-                }
+                // Use contract data directly - no overrides
+                console.log(`✅ Beaver ${beaverId} type from contract: ${beaver.type}`);
                 
                 // Calculate hourly rate for this beaver (matching contract logic)
                 const baseRates = [300, 300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
@@ -978,50 +917,21 @@ export async function fetchPlayerInfo(address) {
                         console.warn(`⚠️ Beaver ${beaverId} does not belong to user ${formattedAddress}`);
                         console.warn(`🔧 This might be an old beaver that needs migration. Consider using import_beaver.`);
                         
-                        // Import beaver detection logic
-                        const isImportedBeaver = (beaverId) => {
-                            const importedBeaverIds = [
-                                40, 35, 37, 41, 43, 45, 34953, 34960,
-                                6, 8, 9, 10, 14, 16, 17, 20, 30, 32
-                            ];
-                            return importedBeaverIds.includes(beaverId);
-                        };
-                        
-                        const getImportedBeaverType = (beaverId) => {
-                            const specificBeaverMap = {
-                                40: 2, 35: 2, 37: 2, 41: 2, 43: 2, 45: 2,
-                                34953: 2, 34960: 2, 6: 2, 8: 2, 9: 2, 10: 2,
-                                14: 2, 16: 2, 17: 2, 20: 2, 30: 2, 32: 2
-                            };
-                            
-                            if (specificBeaverMap[beaverId]) return specificBeaverMap[beaverId];
-                            if (beaverId > 1000) return 2;
-                            if (beaverId >= 6 && beaverId <= 50) return 2;
-                            return 0;
-                        };
-                        
-                        // Determine beaver type for failed beavers
-                        let beaverType = 0; // Default to Noob
-                        if (isImportedBeaver(beaverId)) {
-                            beaverType = getImportedBeaverType(beaverId);
-                            console.log(`🔄 Imported beaver ${beaverId} detected, using type ${beaverType}`);
-                        }
-                        
-                        // Create a placeholder beaver with correct type
+                        // Create a placeholder beaver with default values (no overrides)
                         const placeholderBeaver = {
                             id: Number(beaverId),
                             owner: formattedAddress,
-                            type: beaverType,
+                            type: 0, // Default to Noob
                             level: 1, // Default level
                             last_claim_time: 0,
                             pendingRewards: BigInt(0),
-                            hourlyRate: beaverType === 2 ? 2250 : beaverType === 1 ? 750 : 300, // Correct rate based on type
+                            hourlyRate: 300, // Default Noob rate
                             isLegacy: true, // Mark as legacy/needs migration
                             error: 'Migration required'
                         };
                         
                         beavers.push(placeholderBeaver);
-                        console.log(`⚠️ Added placeholder for legacy beaver ${beaverId} with type ${beaverType}`);
+                        console.log(`⚠️ Added placeholder for legacy beaver ${beaverId}`);
                     }
                     // Continue with next beaver instead of breaking
                     continue;
