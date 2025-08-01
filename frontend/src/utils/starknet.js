@@ -826,7 +826,7 @@ export async function fetchPlayerInfo(address) {
 
         console.log('🔍 Raw get_user_beavers result:', userBeaversResult);
 
-        // Parse beaver IDs
+        // Parse beaver IDs - simple and clean
         let beaverIds = [];
         if (Array.isArray(userBeaversResult) && userBeaversResult.length > 0) {
             // Convert hex IDs to numbers and remove duplicates
@@ -851,15 +851,18 @@ export async function fetchPlayerInfo(address) {
         const totalPendingRewards = await gameContract.calculate_pending_rewards(formattedAddress);
         const totalPendingBigInt = safeBalanceConvert(totalPendingRewards);
         
-        // Create basic beaver objects for all beavers in the list
+        // Process each beaver - NEW SIMPLE APPROACH
         const beavers = [];
         let totalHourlyRate = 0;
         
         for (const beaverId of beaverIds) {
             console.log(`🦫 Processing beaver ${beaverId}`);
             
-            // Try to get beaver details, but don't fail if ownership check fails
-            let beaverDetails = null;
+            // Try to get beaver details from contract
+            let beaverType = 0; // Default to Noob
+            let beaverLevel = 1; // Default to level 1
+            let lastClaimTime = 0;
+            
             try {
                 const beaverResult = await provider.callContract({
                     contractAddress: GAME_CONTRACT_ADDRESS,
@@ -868,53 +871,40 @@ export async function fetchPlayerInfo(address) {
                 });
                 
                 console.log(`🔍 Raw beaver result for ${beaverId}:`, beaverResult);
-                console.log(`🔍 Result length: ${beaverResult.result?.length}`);
                 
-                if (beaverResult.result && beaverResult.result.length >= 5) {
+                // Check if we got a valid result
+                if (beaverResult && beaverResult.result && beaverResult.result.length >= 5) {
+                    // Parse the result array
                     const rawType = beaverResult.result[1];
                     const rawLevel = beaverResult.result[2];
                     const rawLastClaim = beaverResult.result[3];
-                    const rawOwner = beaverResult.result[4];
                     
                     console.log(`🔍 Raw values for beaver ${beaverId}:`, {
                         rawType,
                         rawLevel,
-                        rawLastClaim,
-                        rawOwner
+                        rawLastClaim
                     });
                     
-                    beaverDetails = {
-                        id: beaverId,
-                        type: parseInt(rawType, 16) || 0, // Parse as hex
-                        level: parseInt(rawLevel, 16) || 1, // Parse as hex
-                        last_claim_time: parseInt(rawLastClaim, 16) || 0, // Parse as hex
-                        owner: formattedAddress
-                    };
+                    // Parse hex values correctly
+                    beaverType = parseInt(rawType, 16);
+                    beaverLevel = parseInt(rawLevel, 16);
+                    lastClaimTime = parseInt(rawLastClaim, 16);
                     
-                    console.log(`✅ Got details for beaver ${beaverId}:`, beaverDetails);
-                    console.log(`📊 Type conversion: ${rawType} -> ${beaverDetails.type}`);
+                    console.log(`✅ Parsed beaver ${beaverId}: Type=${beaverType}, Level=${beaverLevel}`);
                 } else {
-                    console.log(`⚠️ Invalid beaver result for ${beaverId}:`, beaverResult);
-                }
-                
-                // Debug: Check if we actually got valid details
-                if (beaverDetails) {
-                    console.log(`✅ Successfully parsed beaver ${beaverId} details:`, beaverDetails);
-                } else {
-                    console.log(`⚠️ No valid details for beaver ${beaverId}, will use defaults`);
+                    console.log(`⚠️ Invalid beaver result for ${beaverId}, using defaults`);
                 }
             } catch (error) {
                 console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
             }
             
-            // Create beaver object with details or defaults
+            // Create beaver object
             const beaver = {
                 id: beaverId,
-                type: beaverDetails?.type || 0, // Default to Noob
-                level: beaverDetails?.level || 1, // Default to level 1
-                last_claim_time: beaverDetails?.last_claim_time || 0,
-                owner: formattedAddress,
-                hourlyRate: 300 // Default rate
+                type: beaverType,
+                level: beaverLevel,
+                last_claim_time: lastClaimTime,
+                owner: formattedAddress
             };
             
             // Calculate hourly rate based on type and level
@@ -925,8 +915,7 @@ export async function fetchPlayerInfo(address) {
             console.log(`💰 Beaver ${beaverId} rate calculation:`, {
                 type: beaver.type,
                 level: beaver.level,
-                baseRate,
-                hourlyRate: beaver.hourlyRate
+                baseRate
             });
             
             const getContractLevelMultiplier = (level) => {
