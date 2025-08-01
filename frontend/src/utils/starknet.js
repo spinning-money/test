@@ -733,6 +733,8 @@ export async function fetchPlayerInfo(address) {
             
             // Try to get beaver details from contract
             try {
+                console.log(`🔍 Calling get_beaver for beaver ${beaverId} with address ${formattedAddress}`);
+                
                 const beaverResult = await provider.callContract({
                     contractAddress: GAME_CONTRACT_ADDRESS,
                     entrypoint: 'get_beaver',
@@ -740,6 +742,12 @@ export async function fetchPlayerInfo(address) {
                 });
                 
                 console.log(`🔍 Raw beaver result for ${beaverId}:`, beaverResult);
+                console.log(`🔍 Result structure:`, {
+                    hasResult: !!beaverResult,
+                    hasResultProperty: !!beaverResult?.result,
+                    resultLength: beaverResult?.result?.length,
+                    resultType: typeof beaverResult?.result
+                });
                 
                 // Check if we got a valid result
                 if (beaverResult && beaverResult.result && beaverResult.result.length >= 5) {
@@ -763,9 +771,11 @@ export async function fetchPlayerInfo(address) {
                     console.log(`🔍 Hex parsing: rawType="${rawType}" -> parseInt("${rawType}", 16) = ${beaverType}`);
                 } else {
                     console.log(`⚠️ Invalid beaver result for ${beaverId}, using defaults`);
+                    console.log(`🔍 Result structure:`, beaverResult);
                 }
             } catch (error) {
                 console.log(`⚠️ Could not get details for beaver ${beaverId}, using defaults. Error:`, error.message);
+                console.log(`🔍 Full error:`, error);
             }
             
             // Create beaver object
