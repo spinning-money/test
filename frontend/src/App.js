@@ -20,6 +20,7 @@ import {
   fetchPendingRewards
 } from './utils/starknet';
 import TokenInfo from './components/TokenInfo';
+import GameStats from './components/GameStats';
 
 import ToastContainer, { showToast } from './components/ToastContainer';
 import Header from './components/Header';
@@ -1049,6 +1050,9 @@ function App() {
 
         {/* Token Info */}
         <TokenInfo />
+        
+        {/* Game Statistics */}
+        <GameStats />
         
         {/* Game Statistics */}
 

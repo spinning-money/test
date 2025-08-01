@@ -1534,15 +1534,224 @@ export async function fetchGameInfo() {
 // Fetch game analytics from contract
 export async function fetchGameAnalytics() {
     try {
-        console.log('🔍 Fetching game analytics...');
-        const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, provider);
-        const analytics = await gameContract.get_game_analytics();
+        const provider = getProvider();
+        const connection = getConnection();
         
-        console.log('📊 Analytics received:', analytics);
-        return analytics;
+        if (!connection) {
+            throw new Error('Wallet not connected');
+        }
+        
+        console.log('📊 Fetching game analytics...');
+        
+        const analyticsResult = await provider.callContract({
+            contractAddress: GAME_CONTRACT_ADDRESS,
+            entrypoint: 'get_game_analytics',
+            calldata: []
+        });
+        
+        if (analyticsResult.result && analyticsResult.result.length >= 9) {
+            const [
+                totalBeaversStaked,
+                totalBurrClaimed,
+                totalStrkCollected,
+                totalBurrBurned,
+                noobCount,
+                proCount,
+                degenCount,
+                activeUsers,
+                totalUpgrades
+            ] = analyticsResult.result;
+            
+            const analytics = {
+                totalBeaversStaked: parseInt(totalBeaversStaked),
+                totalBurrClaimed: BigInt(totalBurrClaimed),
+                totalStrkCollected: BigInt(totalStrkCollected),
+                totalBurrBurned: BigInt(totalBurrBurned),
+                noobCount: parseInt(noobCount),
+                proCount: parseInt(proCount),
+                degenCount: parseInt(degenCount),
+                activeUsers: parseInt(activeUsers),
+                totalUpgrades: parseInt(totalUpgrades)
+            };
+            
+            console.log('✅ Game analytics fetched:', analytics);
+            return analytics;
+        } else {
+            throw new Error('Invalid analytics result');
+        }
     } catch (error) {
-        console.error('❌ Analytics fetch error:', error);
-        return null;
+        console.error('❌ Error fetching game analytics:', error);
+        throw error;
+    }
+}
+
+export async function fetchBeaverTypeStats() {
+    try {
+        const provider = getProvider();
+        const connection = getConnection();
+        
+        if (!connection) {
+            throw new Error('Wallet not connected');
+        }
+        
+        console.log('📊 Fetching beaver type stats...');
+        
+        const statsResult = await provider.callContract({
+            contractAddress: GAME_CONTRACT_ADDRESS,
+            entrypoint: 'get_beaver_type_stats',
+            calldata: []
+        });
+        
+        if (statsResult.result && statsResult.result.length >= 3) {
+            const [noobCount, proCount, degenCount] = statsResult.result;
+            
+            const stats = {
+                noobCount: parseInt(noobCount),
+                proCount: parseInt(proCount),
+                degenCount: parseInt(degenCount)
+            };
+            
+            console.log('✅ Beaver type stats fetched:', stats);
+            return stats;
+        } else {
+            throw new Error('Invalid stats result');
+        }
+    } catch (error) {
+        console.error('❌ Error fetching beaver type stats:', error);
+        throw error;
+    }
+}
+
+export async function fetchTotalClaimedBurr() {
+    try {
+        const provider = getProvider();
+        const connection = getConnection();
+        
+        if (!connection) {
+            throw new Error('Wallet not connected');
+        }
+        
+        console.log('📊 Fetching total claimed BURR...');
+        
+        const result = await provider.callContract({
+            contractAddress: GAME_CONTRACT_ADDRESS,
+            entrypoint: 'get_total_claimed_burr',
+            calldata: []
+        });
+        
+        if (result.result && result.result.length >= 1) {
+            const totalClaimed = BigInt(result.result[0]);
+            console.log('✅ Total claimed BURR fetched:', totalClaimed.toString());
+            return totalClaimed;
+        } else {
+            throw new Error('Invalid total claimed result');
+        }
+    } catch (error) {
+        console.error('❌ Error fetching total claimed BURR:', error);
+        throw error;
+    }
+}
+
+export async function fetchActiveUsersCount() {
+    try {
+        const provider = getProvider();
+        const connection = getConnection();
+        
+        if (!connection) {
+            throw new Error('Wallet not connected');
+        }
+        
+        console.log('📊 Fetching active users count...');
+        
+        const result = await provider.callContract({
+            contractAddress: GAME_CONTRACT_ADDRESS,
+            entrypoint: 'get_active_users_count',
+            calldata: []
+        });
+        
+        if (result.result && result.result.length >= 1) {
+            const activeUsers = parseInt(result.result[0]);
+            console.log('✅ Active users count fetched:', activeUsers);
+            return activeUsers;
+        } else {
+            throw new Error('Invalid active users result');
+        }
+    } catch (error) {
+        console.error('❌ Error fetching active users count:', error);
+        throw error;
+    }
+}
+
+export async function fetchContractBalances() {
+    try {
+        const provider = getProvider();
+        const connection = getConnection();
+        
+        if (!connection) {
+            throw new Error('Wallet not connected');
+        }
+        
+        console.log('📊 Fetching contract balances...');
+        
+        const result = await provider.callContract({
+            contractAddress: GAME_CONTRACT_ADDRESS,
+            entrypoint: 'get_contract_balances',
+            calldata: []
+        });
+        
+        if (result.result && result.result.length >= 2) {
+            const [strkBalance, burrBalance] = result.result;
+            
+            const balances = {
+                strkBalance: BigInt(strkBalance),
+                burrBalance: BigInt(burrBalance)
+            };
+            
+            console.log('✅ Contract balances fetched:', balances);
+            return balances;
+        } else {
+            throw new Error('Invalid contract balances result');
+        }
+    } catch (error) {
+        console.error('❌ Error fetching contract balances:', error);
+        throw error;
+    }
+}
+
+export async function fetchAllGameData() {
+    try {
+        console.log('🔄 Fetching all game data...');
+        
+        const [
+            gameAnalytics,
+            beaverTypeStats,
+            totalClaimedBurr,
+            activeUsersCount,
+            contractBalances,
+            gameInfo
+        ] = await Promise.all([
+            fetchGameAnalytics(),
+            fetchBeaverTypeStats(),
+            fetchTotalClaimedBurr(),
+            fetchActiveUsersCount(),
+            fetchContractBalances(),
+            fetchGameInfo()
+        ]);
+        
+        const allData = {
+            analytics: gameAnalytics,
+            typeStats: beaverTypeStats,
+            totalClaimedBurr,
+            activeUsersCount,
+            contractBalances,
+            gameInfo
+        };
+        
+        console.log('✅ All game data fetched:', allData);
+        return allData;
+    } catch (error) {
+        console.error('❌ Error fetching all game data:', error);
+        throw error;
     }
 }
 
