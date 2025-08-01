@@ -197,7 +197,8 @@ const GAME_ABI = [
             {"name": "owner", "type": "felt"},
             {"name": "beaver_id", "type": "felt"},
             {"name": "beaver_type", "type": "felt"},
-            {"name": "last_claim_time", "type": "felt"}
+            {"name": "last_claim_time", "type": "felt"},
+            {"name": "original_level", "type": "felt"}
         ],
         "outputs": [],
         "stateMutability": "external"
@@ -822,10 +823,20 @@ export async function fetchPlayerInfo(address) {
             
             console.log('🦫 All beaver IDs from contract:', allBeaverIds);
             
-            // Test each beaver ID to see if it's really owned by this user
-            console.log('🔍 Testing ownership for each beaver...');
+            // Import edilen beaver'ları tanımla
+            const importedBeaverIds = [6, 8, 9, 10, 14, 16, 17, 18, 19, 30, 32, 35, 37, 40, 41, 43, 45];
+            
+            console.log('🔍 Processing beavers (including imported ones)...');
             
             for (const beaverId of allBeaverIds) {
+                // Import edilen beaver'lar için özel işlem
+                if (importedBeaverIds.includes(beaverId)) {
+                    console.log(`🔄 Beaver ${beaverId} is imported - using default values`);
+                    beaverIds.push(beaverId);
+                    continue;
+                }
+                
+                // Normal beaver'lar için ownership test et
                 try {
                     const testResult = await provider.callContract({
                         contractAddress: GAME_CONTRACT_ADDRESS,
@@ -1407,16 +1418,16 @@ export async function fetchStakingCosts() {
 }
 
 // Import beaver (migration function)
-export async function importBeaver(owner, beaverId, beaverType, lastClaimTime) {
+export async function importBeaver(owner, beaverId, beaverType, lastClaimTime, originalLevel) {
     if (!currentConnection || !currentConnection.isConnected) {
         throw new Error("Wallet not connected");
     }
     
     try {
-        console.log('🔄 Importing beaver...', {owner, beaverId, beaverType, lastClaimTime});
+        console.log('🔄 Importing beaver...', {owner, beaverId, beaverType, lastClaimTime, originalLevel});
         
         const gameContract = new Contract(GAME_ABI, GAME_CONTRACT_ADDRESS, currentConnection.account);
-        const result = await gameContract.import_beaver(owner, beaverId, beaverType, lastClaimTime);
+        const result = await gameContract.import_beaver(owner, beaverId, beaverType, lastClaimTime, originalLevel);
         
         console.log('✅ Beaver import successful:', result);
         return result;
