@@ -868,6 +868,7 @@ export async function fetchPlayerInfo(address) {
                 });
                 
                 console.log(`🔍 Raw beaver result for ${beaverId}:`, beaverResult);
+                console.log(`🔍 Result length: ${beaverResult.result?.length}`);
                 
                 if (beaverResult.result && beaverResult.result.length >= 5) {
                     const rawType = beaverResult.result[1];
