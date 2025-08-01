@@ -858,18 +858,10 @@ export async function fetchPlayerInfo(address) {
                         beaverLevel = 1; // Default level for imported beavers
                         console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
                     } else {
-                        // For any beaver that failed to parse, try to determine type based on ID
-                        console.log(`🔄 Trying to determine type for beaver ${beaverId} based on ID`);
-                        if (beaverId > 1000) {
-                            beaverType = 2; // Likely Degen for high IDs
-                            console.log(`✅ Set high ID beaver ${beaverId} to Type=2 (Degen)`);
-                        } else if (beaverId > 100) {
-                            beaverType = 1; // Likely Pro for medium IDs
-                            console.log(`✅ Set medium ID beaver ${beaverId} to Type=1 (Pro)`);
-                        } else {
-                            beaverType = 0; // Default to Noob
-                            console.log(`✅ Set low ID beaver ${beaverId} to Type=0 (Noob)`);
-                        }
+                        // For any beaver that failed to parse, use default values
+                        console.log(`⚠️ Could not determine type for beaver ${beaverId}, using default Noob`);
+                        beaverType = 0; // Default to Noob
+                        beaverLevel = 1;
                     }
             }
             
