@@ -723,17 +723,26 @@ export async function fetchPlayerInfo(address) {
         const beavers = [];
         let totalHourlyRate = 0;
         
-        // Known imported beaver IDs and their types
-        const importedBeavers = {
-            34953: { type: 2, level: 1 }, // Degen
-            34960: { type: 2, level: 1 }, // Degen
-            40: { type: 2, level: 1 },    // Degen (real type, not contract data)
-            35: { type: 2, level: 1 },    // Degen
-            37: { type: 2, level: 1 },    // Degen
-            41: { type: 2, level: 1 },    // Degen
-            43: { type: 2, level: 1 },    // Degen
-            45: { type: 2, level: 1 },    // Degen
-            // Add more imported beavers here as needed
+        // Import beaver detection logic
+        const isImportedBeaver = (beaverId) => {
+            // Import edilen beaver'lar genellikle yüksek ID'lere sahip
+            // veya belirli aralıklarda olabilir
+            return beaverId > 1000 || beaverId === 40 || beaverId === 35 || beaverId === 37 || beaverId === 41 || beaverId === 43 || beaverId === 45;
+        };
+        
+        const getImportedBeaverType = (beaverId) => {
+            // ID aralığına göre type belirleme
+            if (beaverId >= 34950 && beaverId <= 34960) {
+                return 2; // Degen (yüksek ID'li import'lar)
+            }
+            if (beaverId >= 1000 && beaverId <= 2000) {
+                return 1; // Pro (orta ID'li import'lar)
+            }
+            if (beaverId >= 2000 && beaverId <= 10000) {
+                return 2; // Degen (yüksek ID'li import'lar)
+            }
+            // Varsayılan olarak Degen
+            return 2; // Degen
         };
         
         for (const beaverId of beaverIds) {
@@ -744,11 +753,11 @@ export async function fetchPlayerInfo(address) {
             let beaverLevel = 1;
             let lastClaimTime = 0;
             
-            // Check if this is a known imported beaver
-            if (importedBeavers[beaverId]) {
-                console.log(`🔄 Known imported beaver ${beaverId} detected`);
-                beaverType = importedBeavers[beaverId].type;
-                beaverLevel = importedBeavers[beaverId].level;
+            // Check if this is an imported beaver
+            if (isImportedBeaver(beaverId)) {
+                console.log(`🔄 Imported beaver ${beaverId} detected`);
+                beaverType = getImportedBeaverType(beaverId);
+                beaverLevel = 1; // Default level for imported beavers
                 console.log(`✅ Set imported beaver ${beaverId} to Type=${beaverType}, Level=${beaverLevel}`);
             }
             
