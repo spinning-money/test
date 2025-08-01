@@ -870,7 +870,7 @@ export async function fetchPlayerInfo(address) {
         const totalPendingRewards = await gameContract.calculate_pending_rewards(formattedAddress);
         const totalPendingBigInt = safeBalanceConvert(totalPendingRewards);
         
-        // Fetch details for each beaver individually
+        // Fetch details for each beaver individually using manual contract calls
         const beavers = [];
         let totalHourlyRate = 0;
         
@@ -878,89 +878,102 @@ export async function fetchPlayerInfo(address) {
             try {
                 console.log(`🦫 Fetching beaver ${beaverId} for user ${formattedAddress}`);
                 
-                // Get beaver details - pass address and beaver_id
-                const beaverDetails = await gameContract.get_beaver(formattedAddress, beaverId);
+                // Use manual contract call to get beaver details (works for both imported and new beavers)
+                const beaverResult = await provider.callContract({
+                    contractAddress: GAME_CONTRACT_ADDRESS,
+                    entrypoint: 'get_beaver',
+                    calldata: [formattedAddress, beaverId.toString()]
+                });
                 
-                // Convert owner from felt252 to hex string
-                let ownerAddress = beaverDetails.owner;
-                if (typeof ownerAddress === 'bigint' || typeof ownerAddress === 'number') {
-                    ownerAddress = '0x' + ownerAddress.toString(16);
-                }
-                
-                const beaver = {
-                    id: Number(beaverId),
-                    owner: ownerAddress,
-                    type: Number(beaverDetails.beaver_type),
-                    level: Number(beaverDetails.level),
-                    last_claim_time: Number(beaverDetails.last_claim_time),
-                    pendingRewards: BigInt(0) // Will calculate proportionally below
-                };
-                
-                // Debug ownership
-                console.log(`🔍 Ownership check for beaver ${beaverId}:`);
-                console.log(`  Contract owner: ${beaver.owner}`);
-                console.log(`  Requested user: ${formattedAddress}`);
-                console.log(`  Owner (lower): ${beaver.owner.toLowerCase()}`);
-                console.log(`  User (lower): ${formattedAddress.toLowerCase()}`);
-                
-                // Normalize addresses for comparison (remove leading zeros)
-                const normalizeAddress = (addr) => {
-                    if (!addr) return '';
-                    let normalized = addr.toLowerCase();
-                    if (normalized.startsWith('0x')) {
-                        normalized = '0x' + normalized.slice(2).replace(/^0+/, '');
-                    }
-                    return normalized;
-                };
-                
-                const normalizedOwner = normalizeAddress(beaver.owner);
-                const normalizedUser = normalizeAddress(formattedAddress);
-                
-                console.log(`  Normalized owner: ${normalizedOwner}`);
-                console.log(`  Normalized user: ${normalizedUser}`);
-                
-                if (normalizedOwner !== normalizedUser) {
-                    console.warn(`⚠️ Ownership mismatch for beaver ${beaverId}: owner=${normalizedOwner}, requested=${normalizedUser}`);
-                    continue;
-                }
-                
-                // Use contract data directly - no overrides
-                console.log(`✅ Beaver ${beaverId} type from contract: ${beaver.type}`);
-                
-                // Calculate hourly rate for this beaver (matching contract logic)
-                const baseRates = [300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
-                const baseRate = baseRates[beaver.type] || 300;
-                
-                // Use exact contract level multipliers (divided by 1000)
-                const getContractLevelMultiplier = (level) => {
-                    if (level === 1) return 1000;      // 1.0x
-                    else if (level === 2) return 1500; // 1.5x  
-                    else if (level === 3) return 2250; // 2.25x
-                    else if (level === 4) return 3375; // 3.375x
-                    else return 5062;                  // 5.0625x (level 5)
-                };
-                
-                const levelMultiplier = getContractLevelMultiplier(beaver.level) / 1000;
-                const hourlyRate = baseRate * levelMultiplier;
-                totalHourlyRate += hourlyRate;
-                
-                beaver.hourlyRate = hourlyRate;
-                
-                beavers.push(beaver);
-                console.log(`✅ Successfully fetched beaver ${beaverId}`);
-                
-                            } catch (error) {
-                    console.error(`❌ Error fetching beaver ${beaverId}:`, error);
-                    if (error.message && error.message.includes('Not beaver owner')) {
-                        console.warn(`⚠️ Beaver ${beaverId} does not belong to user ${formattedAddress}`);
-                        console.warn(`🔧 Skipping this beaver as it's not owned by the user`);
-                        // Don't add placeholder - skip this beaver entirely
+                if (beaverResult.result && beaverResult.result.length >= 5) {
+                    const rawId = beaverResult.result[0];
+                    const rawType = beaverResult.result[1];
+                    const rawLevel = beaverResult.result[2];
+                    const rawLastClaim = beaverResult.result[3];
+                    const rawOwner = beaverResult.result[4];
+                    
+                    // Parse values
+                    const beaverType = parseInt(rawType);
+                    const beaverLevel = parseInt(rawLevel);
+                    const lastClaimTime = parseInt(rawLastClaim);
+                    const owner = '0x' + BigInt(rawOwner).toString(16);
+                    
+                    const beaver = {
+                        id: Number(beaverId),
+                        owner: owner,
+                        type: beaverType,
+                        level: beaverLevel,
+                        last_claim_time: lastClaimTime,
+                        pendingRewards: BigInt(0) // Will calculate proportionally below
+                    };
+                    
+                    // Debug ownership
+                    console.log(`🔍 Ownership check for beaver ${beaverId}:`);
+                    console.log(`  Contract owner: ${beaver.owner}`);
+                    console.log(`  Requested user: ${formattedAddress}`);
+                    console.log(`  Owner (lower): ${beaver.owner.toLowerCase()}`);
+                    console.log(`  User (lower): ${formattedAddress.toLowerCase()}`);
+                    
+                    // Normalize addresses for comparison (remove leading zeros)
+                    const normalizeAddress = (addr) => {
+                        if (!addr) return '';
+                        let normalized = addr.toLowerCase();
+                        if (normalized.startsWith('0x')) {
+                            normalized = '0x' + normalized.slice(2).replace(/^0+/, '');
+                        }
+                        return normalized;
+                    };
+                    
+                    const normalizedOwner = normalizeAddress(beaver.owner);
+                    const normalizedUser = normalizeAddress(formattedAddress);
+                    
+                    console.log(`  Normalized owner: ${normalizedOwner}`);
+                    console.log(`  Normalized user: ${normalizedUser}`);
+                    
+                    if (normalizedOwner !== normalizedUser) {
+                        console.warn(`⚠️ Ownership mismatch for beaver ${beaverId}: owner=${normalizedOwner}, requested=${normalizedUser}`);
                         continue;
                     }
-                    // Continue with next beaver instead of breaking
-                    continue;
+                    
+                    // Use contract data directly - no overrides
+                    console.log(`✅ Beaver ${beaverId} type from contract: ${beaver.type}`);
+                    
+                    // Calculate hourly rate for this beaver (matching contract logic)
+                    const baseRates = [300, 750, 2250]; // Index 0=Noob, 1=Pro, 2=Degen (matching contract)
+                    const baseRate = baseRates[beaver.type] || 300;
+                    
+                    // Use exact contract level multipliers (divided by 1000)
+                    const getContractLevelMultiplier = (level) => {
+                        if (level === 1) return 1000;      // 1.0x
+                        else if (level === 2) return 1500; // 1.5x  
+                        else if (level === 3) return 2250; // 2.25x
+                        else if (level === 4) return 3375; // 3.375x
+                        else return 5062;                  // 5.0625x (level 5)
+                    };
+                    
+                    const levelMultiplier = getContractLevelMultiplier(beaver.level) / 1000;
+                    const hourlyRate = baseRate * levelMultiplier;
+                    totalHourlyRate += hourlyRate;
+                    
+                    beaver.hourlyRate = hourlyRate;
+                    
+                    beavers.push(beaver);
+                    console.log(`✅ Successfully fetched beaver ${beaverId}`);
+                } else {
+                    console.log(`❌ Invalid beaver result for ${beaverId}:`, beaverResult);
                 }
-        }
+                
+                         } catch (error) {
+                 console.error(`❌ Error fetching beaver ${beaverId}:`, error);
+                 if (error.message && error.message.includes('Not beaver owner')) {
+                     console.log(`❌ Beaver ${beaverId} is not owned by user (ownership error)`);
+                 } else {
+                     console.log(`❌ Beaver ${beaverId} failed to fetch:`, error.message);
+                 }
+                 // Continue with next beaver instead of breaking
+                 continue;
+             }
+         }
         
         // Distribute total pending rewards proportionally based on hourly rates
         for (const beaver of beavers) {
