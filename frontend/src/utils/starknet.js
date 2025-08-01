@@ -930,9 +930,11 @@ export async function fetchPlayerInfo(address) {
                     console.log(`  Normalized owner: ${normalizedOwner}`);
                     console.log(`  Normalized user: ${normalizedUser}`);
                     
+                    // Temporarily disable ownership check for debugging
                     if (normalizedOwner !== normalizedUser) {
                         console.warn(`⚠️ Ownership mismatch for beaver ${beaverId}: owner=${normalizedOwner}, requested=${normalizedUser}`);
-                        continue;
+                        console.warn(`🔧 Temporarily allowing beaver ${beaverId} for debugging`);
+                        // continue; // Commented out for debugging
                     }
                     
                     // Use contract data directly - no overrides
